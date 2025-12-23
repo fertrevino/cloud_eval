@@ -71,7 +71,7 @@ def main() -> None:
 
     configure_logging()
     logger = logging.getLogger("cloud_eval.suite")
-    logger.debug("Logging configured; CLOUD_EVAL_DEBUG=%s", os.getenv("CLOUD_EVAL_DEBUG"))
+    logger.debug("Logging configured; LOG_LEVEL=%s", os.getenv("LOG_LEVEL"))
 
     tasks_dir = Path(os.getenv("CLOUD_EVAL_TASKS_DIR", "tasks"))
     localstack_endpoint = os.getenv("ENDPOINT_URL")

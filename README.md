@@ -20,12 +20,12 @@ Create a `.env` file at the repository root with the following format.
 ```dotenv
 CLOUD_EVAL_AGENT_NAME=openai-llm
 OPENAI_API_KEY=sk-…
-CLOUD_EVAL_LOG_LEVEL=INFO
+LOG_LEVEL=INFO
 ```
 
 - `CLOUD_EVAL_AGENT_NAME`: must match an entry in `agents/agents.yaml`.
 - `OPENAI_API_KEY`: required when using the bundled OpenAI agent; other agents simply need whatever environment they declare.
-- `CLOUD_EVAL_LOG_LEVEL`: set to `DEBUG` for verbose prompts/responses, otherwise defaults to `INFO`. Compatibility: `CLOUD_EVAL_DEBUG=1` still toggles `DEBUG`.
+- `LOG_LEVEL`: set to `DEBUG` for verbose prompts/responses, otherwise defaults to `INFO`.
 
 Agent definitions live in `agents/agents.yaml`; the runner merges the declared overrides and credentials into the agent’s environment before invoking its `run_agent` function. You can also configure agent-specific metadata (for example `model` for the OpenAI agent) directly in that catalog instead of relying on global `.env` variables.
 
