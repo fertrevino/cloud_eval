@@ -1,0 +1,6 @@
+boto3==1.42.15
+PyYAML==6.0.3
+python-dotenv==1.2.1
+openai==2.14.0
+httpx==0.28.1
+rich==14.2.0

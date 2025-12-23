@@ -6,4 +6,5 @@ if [ $# -gt 0 ] && [ "$1" = "python" ]; then
   exec "$@"
 fi
 
+export PYTHONPATH="${PYTHONPATH:-/app/src}"
 exec python3 -m cloud_eval.suite
