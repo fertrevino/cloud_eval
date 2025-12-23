@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>cloud-eval dashboard</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>cloud-eval reports</h1>
+      <p>Live view of the latest scenario evaluations.</p>
+    </header>
+    <main>
+      <section class="panel" aria-label="Reports">
+        <h2>Reports</h2>
+        <ul id="report-list" class="report-list"></ul>
+      </section>
+      <section class="panel" aria-live="polite">
+        <h2>Details</h2>
+        <div id="report-detail" class="report-detail">
+          <p>Select a report to inspect metrics, prompts, and actions.</p>
+        </div>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

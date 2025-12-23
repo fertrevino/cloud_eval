@@ -1,0 +1,8 @@
+agents:
+  - name: openai-llm
+    module: "agents.openai_agent"
+    env:
+      MODEL_BACKEND: "openai"
+    model: "gpt-4o-mini"
+    credentials_env:
+      OPENAI_API_KEY: OPENAI_API_KEY

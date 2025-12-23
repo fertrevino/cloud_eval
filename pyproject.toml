@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloud-eval"
+version = "0.1.0"
+description = "Evaluation framework for AI agents managing AWS infrastructure in LocalStack."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "cloud-eval maintainers" }]
+dependencies = [
+    "boto3>=1.34.0",
+    "PyYAML>=6.0.0",
+    "python-dotenv>=1.0.0",
+    "openai>=1.0.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "ruff>=0.1.8",
+    "black>=23.12.1",
+]
+
+[project.scripts]
+cloud-eval = "cloud_eval.suite:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "I", "B"]
+ignore = ["E501"]  # handled by black
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
