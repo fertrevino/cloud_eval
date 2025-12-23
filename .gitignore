@@ -6,3 +6,4 @@ reports/
 .env
 .localstack/
 *.pyc
+TODO.md
