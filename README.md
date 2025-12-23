@@ -1,4 +1,4 @@
-# cloud_eval
+# Cloud Eval
 
 Evaluation harness for AI agents that operate AWS infrastructure inside LocalStack. This repository currently focuses on S3 scenarios, scoring resource correctness, security posture, execution time, step count, action metadata, and error penalties, and exposing everything through reports + a dashboard.
 
@@ -15,7 +15,7 @@ docker compose up --build
 
 ## Configuration
 
-Drop secrets into `.env` (or set `CLOUD_EVAL_ENV_FILE` to point elsewhere):
+Create a `.env` file at the repository root with the following format.
 
 ```dotenv
 CLOUD_EVAL_AGENT_NAME=openai-llm
