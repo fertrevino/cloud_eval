@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 
 from botocore.exceptions import ClientError
-
 from cloud_eval.logging_config import configure_logging
 from cloud_eval.scenario import load_scenario
 

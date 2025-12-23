@@ -9,16 +9,14 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import time
 from pathlib import Path
 from typing import Any, Dict, List
 
-from openai import OpenAI
-
 from cloud_eval.logging_config import configure_logging
 from cloud_eval.scenario import Scenario, load_scenario
 from cloud_eval.tools import REGISTRY, ToolDefinition
+from openai import OpenAI
 
 configure_logging()
 logger = logging.getLogger("cloud_eval.agents.openai_agent")
