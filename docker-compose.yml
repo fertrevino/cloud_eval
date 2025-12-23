@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=0
+    healthcheck:
+      test: ["CMD", "bash", "-c", "awslocal s3 ls || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  cloud-eval:
+    build: .
+    depends_on:
+      - localstack
+    env_file:
+      - .env
+    environment:
+      - ENDPOINT_URL=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      - ./tasks:/app/tasks:ro
+      - ./reports:/app/reports
+    entrypoint: ["./entrypoint.sh"]
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./reports:/app/reports:ro
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+      - REPORTS_DIR=/app/reports
