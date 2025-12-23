@@ -183,7 +183,8 @@ class EvaluationRunner:
         return metrics
 
     def _create_run_dir(self) -> Path:
-        label = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+        # Use a readable, filesystem-safe timestamp for the run directory (e.g. 2023-10-17T03-21-59Z)
+        label = datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
         run_dir = self.report_root / label
         run_dir.mkdir(parents=True, exist_ok=True)
         return run_dir

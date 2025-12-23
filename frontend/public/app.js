@@ -9,6 +9,16 @@ function prettyDuration(record) {
   return record.toFixed(2);
 }
 
+function parseReportMeta(report) {
+  const name = report.name || "";
+  const segments = name.split("/");
+  const runLabel =
+    segments.length > 1 ? segments[segments.length - 2] : segments[0] || "";
+  const title = runLabel || name || "report";
+
+  return { title, name };
+}
+
 function renderActions(actions) {
   if (!actions || !actions.length) {
     return "<p>No actions logged.</p>";
@@ -119,9 +129,11 @@ async function loadReports() {
     reports = data.reports || [];
     reportListEl.innerHTML = "";
     reports.forEach((report) => {
+      const meta = parseReportMeta(report);
       const btn = document.createElement("button");
-      btn.textContent = `${report.name} (${new Date(report.modified_at).toLocaleString()})`;
-      btn.dataset.reportName = report.name;
+      btn.textContent = meta.title;
+      btn.title = meta.name;
+      btn.dataset.reportName = meta.name;
       btn.addEventListener("click", () => selectReport(report.name, btn));
       if (selected === report.name) {
         btn.classList.add("selected");

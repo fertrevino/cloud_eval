@@ -45,14 +45,51 @@ main {
   text-align: left;
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
-  background: #fdfdfd;
-  padding: 0.75rem;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  padding: 0.85rem;
   font: inherit;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  line-height: 1.35;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+.report-list button:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
 }
 .report-list button.selected {
   background: #0f172a;
   color: #fff;
+  border-color: #0f172a;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+}
+.report-title {
+  font-weight: 600;
+  color: #0f172a;
+}
+.report-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: #475569;
+  font-size: 0.9rem;
+}
+.report-path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+.report-list button.selected .report-title,
+.report-list button.selected .report-meta {
+  color: #e2e8f0;
+}
+.report-list button.selected .report-path {
+  color: #cbd5e1;
 }
 .report-detail pre {
   background: #f1f5f9;
