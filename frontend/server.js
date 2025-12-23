@@ -40,11 +40,22 @@ async function listReports() {
       if (!entry.name.endsWith(".json")) {
         continue;
       }
+      let taskLabel = null;
+      try {
+        const raw = await fs.readFile(resolved, "utf-8");
+        const parsed = JSON.parse(raw);
+        taskLabel = parsed.task_name || parsed.task_id || parsed.scenario || null;
+      } catch (err) {
+        if (err.code !== "ENOENT") {
+          console.debug("Unable to read report metadata", resolved, err.message);
+        }
+      }
       try {
         const stats = await fs.stat(resolved);
         files.push({
           name: prefix ? `${prefix}/${entry.name}` : entry.name,
           modified_at: stats.mtimeMs,
+          task_label: taskLabel,
         });
       } catch (err) {
         if (err.code === "ENOENT") {
