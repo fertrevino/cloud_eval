@@ -6,7 +6,7 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=s3
+      - SERVICES=s3,sqs
       - DEBUG=0
     healthcheck:
       test: ["CMD", "bash", "-c", "awslocal s3 ls || exit 1"]

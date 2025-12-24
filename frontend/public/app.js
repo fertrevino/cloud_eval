@@ -1,7 +1,11 @@
 const reportListEl = document.getElementById("report-list");
 const detailEl = document.getElementById("report-detail");
+const runFilterEl = document.getElementById("run-filter");
 let reports = [];
 let selected = null;
+let selectedRun = null;
+let runFolders = [];
+const LOG_PREVIEW_LIMIT = 600;
 
 const escapeHtml = (value) => (value ? value.toString().replace(/</g, "&lt;") : "");
 
@@ -9,14 +13,65 @@ function prettyDuration(record) {
   return record.toFixed(2);
 }
 
+function formatTitleFromSlug(slug) {
+  if (!slug) {
+    return "Report";
+  }
+  const words = slug.split("-").filter(Boolean);
+  if (!words.length) {
+    return slug;
+  }
+  return words
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function renderLog(value) {
+  const text = value == null ? "" : value.toString();
+  if (!text) {
+    return "<pre>-</pre>";
+  }
+  const escaped = escapeHtml(text);
+  if (text.length <= LOG_PREVIEW_LIMIT) {
+    return `<pre>${escaped}</pre>`;
+  }
+  const preview = escapeHtml(text.slice(0, LOG_PREVIEW_LIMIT));
+  return `
+    <div class="log-block">
+      <pre class="log-preview">${preview}…</pre>
+      <details class="log-full">
+        <summary>Show full output (${text.length} chars)</summary>
+        <pre>${escaped}</pre>
+      </details>
+    </div>
+  `;
+}
+
 function parseReportMeta(report) {
   const name = report.name || "";
   const segments = name.split("/");
-  const runLabel =
-    segments.length > 1 ? segments[segments.length - 2] : segments[0] || "";
-  const title = runLabel || name || "report";
+  const filename = segments.pop() || "";
+  const run = segments.length ? segments[0] : "";
 
-  return { title, name };
+  const baseName = filename.replace(/\.json$/, "");
+  const titleSlug = baseName.replace(/-\d{10,}$/, "") || baseName || "report";
+  const title = formatTitleFromSlug(titleSlug);
+
+  return { title, name, run };
+}
+
+function computeRunFolders(list) {
+  const map = new Map();
+  list.forEach((report) => {
+    const meta = parseReportMeta(report);
+    const key = meta.run || "";
+    const existing = map.get(key) || { name: key, count: 0, latest: 0 };
+    const modified = report.modified_at || 0;
+    existing.count += 1;
+    existing.latest = Math.max(existing.latest, modified);
+    map.set(key, existing);
+  });
+  return Array.from(map.values()).sort((a, b) => b.latest - a.latest);
 }
 
 function renderActions(actions) {
@@ -35,13 +90,13 @@ function renderActions(actions) {
               <tr>
                 <td>${action.action}</td>
                 <td class="status-${action.status}">${action.status}</td>
-                <td><pre>${escapeHtml(
+                <td>${renderLog(
                   action.metadata?.result?.invoked_command ||
                     action.metadata?.args?.command ||
                     "-"
-                )}</pre></td>
-                <td><pre>${escapeHtml(action.metadata?.result?.stdout)}</pre></td>
-                <td><pre>${escapeHtml(action.metadata?.result?.stderr)}</pre></td>
+                )}</td>
+                <td>${renderLog(action.metadata?.result?.stdout)}</td>
+                <td>${renderLog(action.metadata?.result?.stderr)}</td>
               </tr>
             `
           )
@@ -59,7 +114,6 @@ function renderReport(report) {
 
   const metrics = report.metrics || {};
   const actions = report.actions || [];
-  const info = report.reports?.[0] || {};
   const scoreComponents = report.verification?.score_details?.components || {};
 
   const taskLabel = report.task_name || report.task_id || report.scenario || "task";
@@ -74,10 +128,6 @@ function renderReport(report) {
         ${renderPenalty(metrics.error_action_penalty)}
       </div>
       ${renderScoreComponents(scoreComponents)}
-    </section>
-    <section>
-      <h4>Task validation</h4>
-      <pre>${JSON.stringify(info, null, 2)}</pre>
     </section>
     ${renderNotes(report.notes || [])}
     <section>
@@ -127,26 +177,86 @@ async function loadReports() {
     const response = await fetch("/api/reports");
     const data = await response.json();
     reports = data.reports || [];
-    reportListEl.innerHTML = "";
-    reports.forEach((report) => {
-      const meta = parseReportMeta(report);
-      const btn = document.createElement("button");
-      btn.textContent = meta.title;
-      btn.title = meta.name;
-      btn.dataset.reportName = meta.name;
-      btn.addEventListener("click", () => selectReport(report.name, btn));
-      if (selected === report.name) {
-        btn.classList.add("selected");
-      }
-      reportListEl.appendChild(btn);
-    });
-    if (!selected && reports.length) {
-      const firstButton = reportListEl.querySelector("button");
-      selectReport(reports[0].name, firstButton);
-    }
+    runFolders = computeRunFolders(reports);
+    ensureRunSelection();
+    renderRunFilter();
+    renderReportList();
   } catch (err) {
     detailEl.innerHTML = `<p class="error">Unable to load reports: ${err.message}</p>`;
   }
+}
+
+function renderRunFilter() {
+  if (!runFilterEl) return;
+  runFilterEl.innerHTML = "";
+
+  runFolders.forEach((folder) => {
+    const opt = document.createElement("option");
+    opt.value = folder.name;
+    opt.textContent = folder.name || "run";
+    runFilterEl.appendChild(opt);
+  });
+
+  if (selectedRun) {
+    runFilterEl.value = selectedRun;
+  } else if (runFolders.length) {
+    runFilterEl.value = runFolders[0].name;
+    selectedRun = runFolders[0].name;
+  }
+}
+
+function ensureRunSelection() {
+  if (!selectedRun || !runFolders.some((folder) => folder.name === selectedRun)) {
+    selectedRun = runFolders.length ? runFolders[0].name : null;
+  }
+}
+
+function getVisibleReports() {
+  if (!selectedRun) {
+    return [];
+  }
+  return reports.filter((report) => report.name && report.name.startsWith(`${selectedRun}/`));
+}
+
+function renderReportList() {
+  reportListEl.innerHTML = "";
+  if (!runFolders.length) {
+    detailEl.innerHTML = "<p>No reports available yet.</p>";
+    return;
+  }
+
+  const visibleReports = getVisibleReports();
+  if (!visibleReports.length) {
+    detailEl.innerHTML = `<p>No reports for run ${selectedRun}.</p>`;
+  }
+  visibleReports.forEach((report) => {
+    const meta = parseReportMeta(report);
+    const btn = document.createElement("button");
+    btn.textContent = meta.title;
+    btn.title = meta.name;
+    btn.dataset.reportName = meta.name;
+    btn.addEventListener("click", () => selectReport(report.name, btn));
+    if (selected === report.name) {
+      btn.classList.add("selected");
+    }
+    reportListEl.appendChild(btn);
+  });
+
+  if (!selected && visibleReports.length) {
+    const first = visibleReports[0];
+    const firstButton = reportListEl.querySelector("button");
+    selectReport(first.name, firstButton);
+  } else if (selected && !visibleReports.some((report) => report.name === selected)) {
+    detailEl.innerHTML = "<p>Select a report to inspect metrics, prompts, and actions.</p>";
+  }
+}
+
+if (runFilterEl) {
+  runFilterEl.addEventListener("change", () => {
+    selectedRun = runFilterEl.value || null;
+    selected = null;
+    renderReportList();
+  });
 }
 
 async function selectReport(name, button) {
