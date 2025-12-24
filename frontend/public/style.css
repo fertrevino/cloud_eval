@@ -40,6 +40,23 @@ main {
   flex-direction: column;
   gap: 0.25rem;
 }
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+.filter label {
+  font-weight: 600;
+  color: #0f172a;
+}
+.filter select {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.4rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font: inherit;
+}
 .report-list button {
   width: 100%;
   text-align: left;
@@ -101,6 +118,25 @@ main {
   white-space: pre-wrap;
   word-break: break-word;
   overflow-x: hidden;
+}
+.log-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.log-preview {
+  max-height: 8rem;
+  overflow: hidden;
+  position: relative;
+}
+.log-full summary {
+  cursor: pointer;
+  color: #0f172a;
+  font-weight: 600;
+}
+.log-full summary:focus-visible {
+  outline: 2px solid #0f172a;
+  outline-offset: 2px;
 }
 .table {
   width: 100%;

@@ -182,15 +182,15 @@ class EvaluationRunner:
             metrics["score"] = max(0.0, metrics["score"] - penalty)
         return metrics
 
-    def _create_run_dir(self) -> Path:
+    def _create_run_dir(self, label: Optional[str] = None) -> Path:
         # Use a readable, filesystem-safe timestamp for the run directory (e.g. 2023-10-17T03-21-59Z)
-        label = datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
+        label = label or datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
         run_dir = self.report_root / label
         run_dir.mkdir(parents=True, exist_ok=True)
         return run_dir
 
-    def run(self) -> Path:
-        run_dir = self._create_run_dir()
+    def run(self, session_label: Optional[str] = None) -> Path:
+        run_dir = self._create_run_dir(session_label)
         start_time = time.monotonic()
         task_label = self.scenario.task_name or self.scenario.task_id or "task"
         console.print(

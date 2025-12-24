@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -34,6 +35,7 @@ def run_suite(
         raise SystemExit(f"No scenarios found under {tasks_dir}")
 
     report_dir.mkdir(parents=True, exist_ok=True)
+    session_label = datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
 
     for scenario_path in scenarios:
         console.print(f"[blue]Running task[/blue] {scenario_path}")
@@ -45,7 +47,7 @@ def run_suite(
             report_dir=report_dir,
             agent=agent,
         )
-        report = runner.run()
+        report = runner.run(session_label=session_label)
         console.print(f"[green]Evaluation complete:[/green] {report}")
 
 
