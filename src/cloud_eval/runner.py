@@ -208,7 +208,7 @@ class EvaluationRunner:
             if isinstance(components, dict):
                 components["error_action_penalty"] = {
                     "label": "Penalty (–0.02 per error action)",
-                    "value": penalty,
+                    "value": -penalty,
                     "max": None,
                 }
 

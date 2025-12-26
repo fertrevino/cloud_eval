@@ -13,6 +13,13 @@ function prettyDuration(record) {
   return record.toFixed(2);
 }
 
+function formatNumber(value, digits = 2) {
+  if (value == null || Number.isNaN(value)) {
+    return "-";
+  }
+  return Number(value).toFixed(digits);
+}
+
 function formatTitleFromSlug(slug) {
   if (!slug) {
     return "Report";
@@ -122,7 +129,7 @@ function renderReport(report) {
       <h3>Task: ${taskLabel}</h3>
       <p>${report.description || "no description"}</p>
       <div class="metrics">
-        <strong>Score:</strong> ${metrics.score?.toFixed(3) || "-"}<br>
+        <strong>Score:</strong> ${formatNumber(metrics.score)}<br>
         <strong>Duration:</strong> ${prettyDuration(metrics.duration_seconds || 0)}s<br>
         <strong>Step count:</strong> ${metrics.step_count || 0}<br>
         ${renderPenalty(metrics.error_action_penalty)}
@@ -291,10 +298,8 @@ function renderScoreComponents(components) {
         return "";
       }
       const label = component.label || key;
-      const formattedValue =
-        typeof component.value === "number" ? component.value.toFixed(3) : "-";
-      const formattedMax =
-        typeof component.max === "number" ? component.max.toFixed(3) : "-";
+      const formattedValue = formatNumber(component.value, 2);
+      const formattedMax = formatNumber(component.max, 2);
       return `
         <tr>
           <td>${label}</td>

@@ -46,6 +46,21 @@ class ToolRegistry:
 
 REGISTRY = ToolRegistry()
 
+BEST_PRACTICE_TAG_KEYS = [
+    "environment",
+    "project",
+    "service",
+    "team",
+    "owner",
+    "contact",
+    "cost_center",
+    "billing",
+    "application",
+    "stack",
+    "department",
+    "managed_by",
+]
+
 
 def register_tool(
     name: str,
@@ -130,3 +145,22 @@ def aws_cli_tool(args: Mapping[str, Any], env: Mapping[str, str]) -> Dict[str, A
         "stdout": result.stdout.strip(),
         "stderr": result.stderr.strip(),
     }
+
+
+def compute_best_practice_tag_score(
+    tags: Mapping[str, Any],
+    cap: float,
+    split: float = 2.0,
+    best_practice_keys: Iterable[str] | None = None,
+) -> float:
+    """
+    Compute a tag score up to `cap`, awarding cap/split per matching best-practice tag key.
+    Keys are compared case-insensitively and trimmed for robustness. Defaults to BEST_PRACTICE_TAG_KEYS.
+    """
+    if cap <= 0:
+        return 0.0
+    keys = best_practice_keys or BEST_PRACTICE_TAG_KEYS
+    per_tag = cap / split if split else cap
+    normalized = {str(k).strip().lower() for k in tags.keys()}
+    matches = sum(1 for key in keys if key in normalized)
+    return min(matches * per_tag, cap)

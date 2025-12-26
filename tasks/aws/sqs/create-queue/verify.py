@@ -9,6 +9,7 @@ from typing import Any, Dict
 
 import boto3
 from botocore.exceptions import ClientError
+from cloud_eval.tools import compute_best_practice_tag_score
 
 
 QUEUE_NAME = "cloud-eval-queue"
@@ -17,22 +18,6 @@ WEIGHTS = {
     "long_polling": 0.1,
     "tags": 0.1,
 }
-
-BEST_PRACTICE_TAG_KEYS = [
-    "environment",
-    "project",
-    "service",
-    "team",
-    "owner",
-    "contact",
-    "cost_center",
-    "billing",
-    "application",
-    "stack",
-    "department",
-    "managed_by",
-]
-
 
 def build_client(endpoint: str):
     region = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
@@ -46,14 +31,8 @@ def build_client(endpoint: str):
 
 
 def compute_tag_score(tags: Dict[str, Any]) -> float:
-    """Award up to the tag weight, split across best-practice tags (case-insensitive)."""
-    normalized_keys = {str(k).strip().lower() for k in tags.keys()}
-    matches = sum(1 for key in BEST_PRACTICE_TAG_KEYS if key in normalized_keys)
-    cap = WEIGHTS["tags"]
-    if cap <= 0:
-        return 0.0
-    per_tag = cap / 2  # 0.05 when cap is 0.1; two best-practice tags hits the cap
-    return min(matches * per_tag, cap)
+    """Award up to the tag weight across best-practice keys."""
+    return compute_best_practice_tag_score(tags, cap=WEIGHTS["tags"])
 
 
 def check_queue(client) -> Dict[str, Any]:
