@@ -10,6 +10,7 @@ from pathlib import Path
 from botocore.exceptions import ClientError
 from cloud_eval.logging_config import configure_logging
 from cloud_eval.scenario import load_scenario
+from cloud_eval.tools import compute_best_practice_tag_score
 
 configure_logging()
 logger = logging.getLogger("cloud_eval.verify")
@@ -24,11 +25,13 @@ PUBLIC_ACCESS_BLOCK_KEYS = (
 )
 DEFAULT_ENCRYPTION_ALGORITHMS = {"AES256", "aws:kms"}
 COMPONENT_META = {
-    "base": {"max": 0.7, "label": "Resource correctness"},
+    "base": {"max": 0.65, "label": "Resource correctness"},
     "unique_name_or_runid": {"max": 0.1, "label": "Unique name"},
     "block_public_access": {"max": 0.1, "label": "Public access block"},
     "default_encryption": {"max": 0.1, "label": "Default encryption"},
+    "best_practice_tags": {"max": 0.05, "label": "Tags applied"},
 }
+TAGS_WEIGHT = COMPONENT_META["best_practice_tags"]["max"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -102,15 +105,6 @@ def _bucket_has_unique_suffix(bucket_name: str) -> bool:
     return False
 
 
-def _bucket_has_runid_tag(tags: list[dict[str, str]]) -> bool:
-    for tag in tags:
-        key = tag.get("Key", "") or ""
-        normalized = key.replace("-", "").replace("_", "").lower()
-        if normalized == "runid":
-            return True
-    return False
-
-
 def _get_public_access_block(client, bucket: str) -> dict[str, object]:
     try:
         response = client.get_public_access_block(Bucket=bucket)
@@ -159,7 +153,7 @@ def _collect_bucket_security(client, bucket: str) -> dict[str, object]:
         "bucket_exists": False,
         "region": None,
         "tags": [],
-        "run_id_tag": False,
+        "tag_score": 0.0,
         "unique_suffix": False,
         "public_access_block": {},
         "block_public_access_enabled": False,
@@ -174,7 +168,8 @@ def _collect_bucket_security(client, bucket: str) -> dict[str, object]:
     bucket_security["region"] = _get_bucket_location(client, bucket)
     tags = _get_bucket_tags(client, bucket)
     bucket_security["tags"] = tags
-    bucket_security["run_id_tag"] = _bucket_has_runid_tag(tags)
+    tag_dict = {tag.get("Key", ""): tag.get("Value", "") for tag in tags if tag.get("Key")}
+    bucket_security["tag_score"] = compute_best_practice_tag_score(tag_dict, cap=TAGS_WEIGHT)
     bucket_security["unique_suffix"] = _bucket_has_unique_suffix(bucket)
     public_access = _get_public_access_block(client, bucket)
     bucket_security["public_access_block"] = public_access.get("configuration", {})
@@ -225,11 +220,14 @@ def _calculate_score(
     component_totals = {name: 0.0 for name in COMPONENT_META}
     for bucket_name, security in bucket_security_map.items():
         region = security.get("region")
-        base_score = 0.7 if region == "us-east-1" else 0.0
-        unique_bonus = 0.1 if security.get("unique_suffix") or security.get("run_id_tag") else 0.0
-        block_bonus = 0.1 if security.get("block_public_access_enabled") else 0.0
-        encryption_bonus = 0.1 if security.get("default_encryption_enabled") else 0.0
-        bucket_score = min(1.0, base_score + unique_bonus + block_bonus + encryption_bonus)
+        base_score = COMPONENT_META["base"]["max"] if region == "us-east-1" else 0.0
+        unique_bonus = COMPONENT_META["unique_name_or_runid"]["max"] if security.get("unique_suffix") else 0.0
+        block_bonus = COMPONENT_META["block_public_access"]["max"] if security.get("block_public_access_enabled") else 0.0
+        encryption_bonus = COMPONENT_META["default_encryption"]["max"] if security.get("default_encryption_enabled") else 0.0
+        tag_bonus = min(security.get("tag_score", 0.0), COMPONENT_META["best_practice_tags"]["max"])
+        bucket_score = min(
+            1.0, base_score + unique_bonus + block_bonus + encryption_bonus + tag_bonus
+        )
         bucket_scores.append(bucket_score)
         bucket_results[bucket_name] = {
             "score": bucket_score,
@@ -238,11 +236,11 @@ def _calculate_score(
                 "unique_name_or_runid": unique_bonus,
                 "block_public_access": block_bonus,
                 "default_encryption": encryption_bonus,
+                "best_practice_tags": tag_bonus,
             },
             "details": {
                 "region": region,
                 "unique_suffix": security.get("unique_suffix"),
-                "run_id_tag": security.get("run_id_tag"),
                 "public_access_block": security.get("public_access_block"),
                 "default_encryption_enabled": security.get("default_encryption_enabled"),
             },
@@ -251,6 +249,7 @@ def _calculate_score(
         component_totals["unique_name_or_runid"] += bucket_results[bucket_name]["components"]["unique_name_or_runid"]
         component_totals["block_public_access"] += bucket_results[bucket_name]["components"]["block_public_access"]
         component_totals["default_encryption"] += bucket_results[bucket_name]["components"]["default_encryption"]
+        component_totals["best_practice_tags"] += bucket_results[bucket_name]["components"]["best_practice_tags"]
 
     final_score = sum(bucket_scores) / len(bucket_scores)
     bucket_count = len(bucket_scores)
