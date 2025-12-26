@@ -169,6 +169,18 @@ main {
 .note + .note {
   margin-top: 0.5rem;
 }
+.link-list {
+  padding-left: 1.25rem;
+  margin: 0.25rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.link-list a {
+  color: #0f172a;
+  font-weight: 600;
+  word-break: break-all;
+}
 @media (max-width: 900px) {
   main {
     grid-template-columns: 1fr;

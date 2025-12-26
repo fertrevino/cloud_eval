@@ -219,6 +219,7 @@ class EvaluationRunner:
             "category_name": self.scenario.category_name,
             "description": self.scenario.description,
             "notes": self.scenario.metadata.notes,
+            "links": self.scenario.metadata.links,
             "reports": [],
             "actions": [action.__dict__ for action in actions],
             "metrics": metrics,

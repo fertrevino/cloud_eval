@@ -130,6 +130,7 @@ function renderReport(report) {
       ${renderScoreComponents(scoreComponents)}
     </section>
     ${renderNotes(report.notes || [])}
+    ${renderLinks(report.links || [])}
     <section>
       <h4>Actions (${actions.length})</h4>
       ${renderActions(actions)}
@@ -308,7 +309,7 @@ function renderScoreComponents(components) {
       <h4>Score breakdown</h4>
       <table class="table">
         <thead>
-          <tr><th>Component</th><th>Value</th><th>Max</th></tr>
+          <tr><th></th><th>Value</th><th>Max</th></tr>
         </thead>
         <tbody>
           ${rows}
@@ -336,6 +337,36 @@ function renderNotes(notes) {
     <section>
       <h4>Notes</h4>
       ${items}
+    </section>
+  `;
+}
+
+function renderLinks(links) {
+  if (!links || !links.length) {
+    return "";
+  }
+  const items = links
+    .map((link) => {
+      if (!link) {
+        return "";
+      }
+      const isUrl = typeof link === "string" && link.startsWith("http");
+      const escaped = escapeHtml(link);
+      const body = isUrl
+        ? `<a href="${escaped}" target="_blank" rel="noopener noreferrer">${escaped}</a>`
+        : escaped;
+      return `<li>${body}</li>`;
+    })
+    .join("");
+  if (!items) {
+    return "";
+  }
+  return `
+    <section>
+      <h4>Links</h4>
+      <ul class="link-list">
+        ${items}
+      </ul>
     </section>
   `;
 }
