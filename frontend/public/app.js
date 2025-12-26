@@ -121,7 +121,7 @@ function renderReport(report) {
 
   const metrics = report.metrics || {};
   const actions = report.actions || [];
-  const scoreComponents = report.verification?.score_details?.components || {};
+  const scoreComponents = report.verification?.components || {};
 
   const taskLabel = report.task_name || report.task_id || report.scenario || "task";
   detailEl.innerHTML = `
