@@ -4,7 +4,7 @@ Standardized verification interface and data models.
 All task verifiers inherit from Verifier and return VerificationResult.
 """
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Dict
 
 from pydantic import BaseModel, Field, field_validator
 
