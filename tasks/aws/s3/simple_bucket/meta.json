@@ -9,6 +9,9 @@
   "difficulty": "L0",
   "tags": ["s3"],
   "notes": [
+    "Bucket names must be globally unique accross all AWS accounts, hence having a Global Unique Identifier (GUID) as part of the bucket name is recommended. Without further context in the prompt, it is expected that creating a bucket follows security practices such as blocking public access."
+  ],
+  "links": [
     "https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html#automatically-created-buckets"
   ]
 }

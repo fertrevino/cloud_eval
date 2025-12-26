@@ -18,6 +18,7 @@ class TaskMetadata:
     difficulty: Optional[str]
     tags: List[str]
     notes: List[str] = field(default_factory=list)
+    links: List[str] = field(default_factory=list)
     expected_steps: int = 0
 
 
@@ -83,6 +84,7 @@ def load_scenario(meta_path: Path) -> Scenario:
         difficulty=data.get("difficulty"),
         tags=data.get("tags", []),
         notes=data.get("notes", []),
+        links=data.get("links", []),
         expected_steps=data.get("expected_steps", 0),
     )
     return Scenario(
