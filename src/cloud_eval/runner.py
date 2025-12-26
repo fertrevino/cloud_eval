@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import logging
 import os
-import subprocess
-import tempfile
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -17,6 +16,7 @@ from rich.console import Console
 from . import __version__
 from .agent_config import AgentDefinition
 from .scenario import Scenario
+from .verifier import Verifier
 
 console = Console()
 logger = logging.getLogger("cloud_eval.runner")
@@ -114,39 +114,36 @@ class EvaluationRunner:
         if not verify_path.exists():
             return None
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp_file:
-            report_path = Path(tmp_file.name)
+        try:
+            # Dynamically import the verify module
+            spec = importlib.util.spec_from_file_location("verify", verify_path)
+            if not spec or not spec.loader:
+                logger.error("Could not load verify.py from %s", verify_path)
+                return None
+            
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
 
-            cmd = [
-                "python",
-                str(verify_path),
-                "--scenario-path",
-                str(self.scenario_path),
-                "--localstack-endpoint",
-                self.localstack_endpoint,
-                "--skip-apply",
-                "--write-report",
-                str(report_path),
-                "--steps",
-                str(steps),
-            ]
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode != 0:
-            console.print(
-                "[yellow]Verification script failed; check container logs for details.[/yellow]"
-            )
-            logger.debug("Verification stdout: %s", result.stdout)
-            logger.debug("Verification stderr: %s", result.stderr)
+            # Find the Verifier subclass in the module
+            verifier_class = None
+            for name in dir(module):
+                obj = getattr(module, name)
+                if isinstance(obj, type) and issubclass(obj, Verifier) and obj is not Verifier:
+                    verifier_class = obj
+                    break
 
-        verification = None
-        if report_path.exists():
-            try:
-                verification = json.loads(report_path.read_text())
-            except json.JSONDecodeError as exc:
-                logger.error("Unable to parse verification output: %s", exc)
-            finally:
-                report_path.unlink(missing_ok=True)
-        return verification
+            if not verifier_class:
+                logger.error("No Verifier subclass found in %s", verify_path)
+                return None
+
+            # Instantiate and run the verifier
+            verifier = verifier_class(self.localstack_endpoint)
+            result = verifier.verify()
+            return result.model_dump()
+        except Exception as exc:
+            console.print(f"[yellow]Verification failed: {exc}[/yellow]")
+            logger.exception("Verification error")
+            return None
 
     def _score(
         self, actions: List[ActionLog], start_time: float, verification: Optional[Dict[str, Any]]
