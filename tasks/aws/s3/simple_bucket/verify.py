@@ -5,13 +5,12 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict
 
 import boto3
 from botocore.exceptions import ClientError
 
 from cloud_eval.tools import compute_best_practice_tag_score
-from cloud_eval.verifier import Verifier, VerificationResult, ScoringWeights, ScoringComponent
+from cloud_eval.verifier import Verifier, VerificationResult, ScoringWeights, ScoringComponent, ScoringComponentResult
 
 logger = logging.getLogger("cloud_eval.verify.s3")
 
@@ -77,28 +76,14 @@ class S3BucketVerifier(Verifier):
     def verify(self) -> VerificationResult:
         """Run verification and return structured result."""
         client = self._build_client()
-        failures, bucket_security = self._verify_tasks(client)
-        score, score_details, component_breakdown = self._calculate_score(failures, bucket_security)
-        
-        # Compute resource correctness and security scores
-        resource_correctness = score_details.get("components", {}).get("base", {}).get("value", 0.0)
-        security_score_parts = [
-            score_details.get("components", {}).get("block_public_access", {}).get("value", 0.0),
-            score_details.get("components", {}).get("default_encryption", {}).get("value", 0.0),
-        ]
-        security_score = sum(security_score_parts) / 0.2 if sum(security_score_parts) > 0 else 0.0
+        bucket_attributes = self._collect_bucket_attributes(client)
+        score, component_breakdown, errors = self._calculate_score(bucket_attributes)
         
         return VerificationResult(
             score=round(score, 3),
-            resource_correctness=round(resource_correctness, 3),
-            security=round(min(1.0, security_score), 3),
             components=component_breakdown,
-            passed=score >= 0.5 and not failures,
-            details={
-                "bucket_security": bucket_security,
-                "failures": failures,
-            },
-            errors=failures,
+            passed=len(errors) == 0,
+            errors=errors,
         )
 
     def _build_client(self):
@@ -193,9 +178,9 @@ class S3BucketVerifier(Verifier):
             logger.debug("Failed to list buckets: %s", exc)
             return []
 
-    def _collect_bucket_security(self, client, bucket: str) -> dict[str, object]:
-        """Collect security details for a bucket."""
-        bucket_security: dict[str, object] = {
+    def _collect_bucket_attributes_for_bucket(self, client, bucket: str) -> dict[str, object]:
+        """Collect evaluation attributes for a bucket."""
+        bucket_attributes: dict[str, object] = {
             "bucket_exists": False,
             "region": None,
             "tags": [],
@@ -208,67 +193,57 @@ class S3BucketVerifier(Verifier):
         try:
             client.head_bucket(Bucket=bucket)
         except ClientError:
-            return bucket_security
+            return bucket_attributes
 
-        bucket_security["bucket_exists"] = True
-        bucket_security["region"] = self._get_bucket_location(client, bucket)
+        bucket_attributes["bucket_exists"] = True
+        bucket_attributes["region"] = self._get_bucket_location(client, bucket)
         tags = self._get_bucket_tags(client, bucket)
-        bucket_security["tags"] = tags
+        bucket_attributes["tags"] = tags
         tag_dict = {tag.get("Key", ""): tag.get("Value", "") for tag in tags if tag.get("Key")}
-        bucket_security["tag_score"] = compute_best_practice_tag_score(
+        bucket_attributes["tag_score"] = compute_best_practice_tag_score(
             tag_dict, cap=self.scoring_weights.components["best_practice_tags"].weight
         )
-        bucket_security["unique_suffix"] = self._bucket_has_unique_suffix(bucket)
+        bucket_attributes["unique_suffix"] = self._bucket_has_unique_suffix(bucket)
         public_access = self._get_public_access_block(client, bucket)
-        bucket_security["public_access_block"] = public_access.get("configuration", {})
-        bucket_security["block_public_access_enabled"] = public_access.get("all_true", False)
-        bucket_security["default_encryption_enabled"] = self._bucket_has_default_encryption(client, bucket)
-        return bucket_security
+        bucket_attributes["public_access_block"] = public_access.get("configuration", {})
+        bucket_attributes["block_public_access_enabled"] = public_access.get("all_true", False)
+        bucket_attributes["default_encryption_enabled"] = self._bucket_has_default_encryption(client, bucket)
+        return bucket_attributes
 
-    def _verify_tasks(self, client) -> tuple[list[str], dict[str, dict]]:
-        """Verify bucket tasks."""
-        failures: list[str] = []
+    def _collect_bucket_attributes(self, client) -> dict[str, dict]:
+        """Collect evaluation attributes for all buckets."""
         bucket_names = self._list_bucket_names(client)
-        bucket_security_map = {
-            name: self._collect_bucket_security(client, name) for name in bucket_names
+        return {
+            name: self._collect_bucket_attributes_for_bucket(client, name) 
+            for name in bucket_names
         }
 
-        if not bucket_security_map:
-            failures.append("No buckets exist in the environment.")
-        else:
-            east_buckets = [
-                name for name, sec in bucket_security_map.items() if sec.get("region") == "us-east-1"
-            ]
-            if not east_buckets:
-                failures.append("Buckets exist but none are located in us-east-1.")
-        
-        for bucket_name, bucket_security in bucket_security_map.items():
-            logger.debug("Verification results for %s: %s", bucket_name, bucket_security)
-
-        return failures, bucket_security_map
-
     def _calculate_score(
-        self, failures: list[str], bucket_security_map: dict[str, dict]
-    ) -> tuple[float, dict[str, Any], dict[str, dict[str, Any]]]:
-        """Calculate verification score."""
-        if failures:
-            return 0.0, {"reason": "bucket_failed", "failures": failures}, {}
+        self, bucket_attributes_map: dict[str, dict]
+    ) -> tuple[float, dict[str, ScoringComponentResult], list[str]]:
+        """Calculate verification score and validate bucket requirements.
         
-        if not bucket_security_map:
-            return (
-                0.0,
-                {
-                    "reason": "no_buckets_defined",
-                    "message": "Scenario does not define any buckets to verify.",
-                },
-                {},
-            )
+        Returns:
+            (score, components, errors)
+        """
+        errors: list[str] = []
+        
+        if not bucket_attributes_map:
+            errors.append("No buckets exist in the environment.")
+            return 0.0, {}, errors
+        
+        east_buckets = [
+            name for name, sec in bucket_attributes_map.items() if sec.get("region") == "us-east-1"
+        ]
+        if not east_buckets:
+            errors.append("Buckets exist but none are located in us-east-1.")
+            return 0.0, {}, errors
 
         bucket_results: dict[str, dict[str, object]] = {}
         bucket_scores: list[float] = []
         component_totals = {name: 0.0 for name in self.scoring_weights.components}
         
-        for bucket_name, security in bucket_security_map.items():
+        for bucket_name, security in bucket_attributes_map.items():
             region = security.get("region")
             base_score = self.scoring_weights.components["base"].weight if region == "us-east-1" else 0.0
             unique_bonus = self.scoring_weights.components["unique_name_or_runid"].weight if security.get("unique_suffix") else 0.0
@@ -302,32 +277,23 @@ class S3BucketVerifier(Verifier):
 
         final_score = sum(bucket_scores) / len(bucket_scores)
         bucket_count = len(bucket_scores)
-        component_details: dict[str, dict[str, object]] = {}
+        component_details: dict[str, ScoringComponentResult] = {}
         
         for name, component in self.scoring_weights.components.items():
             average = component_totals[name] / bucket_count
-            component_details[name] = {
-                "label": component.label,
-                "value": round(average, 3),
-                "max": component.weight,
-                "description": component.description,
-            }
+            component_details[name] = ScoringComponentResult(
+                label=component.label,
+                description=component.description,
+                value=round(average, 3),
+                max=component.weight,
+            )
         
-        score_details = {
-            "reason": "bucket_security_checks",
-            "buckets": bucket_results,
-            "score": final_score,
-            "components": component_details,
-        }
-        
-        return final_score, score_details, component_details
+        return final_score, component_details, errors
 
 
 if __name__ == "__main__":
     # Support old CLI interface for compatibility during transition
     import argparse
-    import json
-    import sys
 
     parser = argparse.ArgumentParser(description="Verify S3 bucket creation")
     parser.add_argument(

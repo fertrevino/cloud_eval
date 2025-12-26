@@ -41,19 +41,23 @@ class ScoringWeights(BaseModel):
         return {name: comp.weight for name, comp in self.components.items()}
 
 
+class ScoringComponentResult(BaseModel):
+    """Result/score for a single component in verification."""
+
+    label: str = Field(description="Human-readable label for this component")
+    description: str = Field(default="", description="Detailed description of what this component checks")
+    value: float = Field(..., ge=0.0, le=1.0, description="Actual score achieved (0.0–1.0)")
+    max: float = Field(..., ge=0.0, le=1.0, description="Maximum possible weight for this component")
+
+
 class VerificationResult(BaseModel):
     """Standard verification output returned by all Verifier implementations."""
 
     score: float = Field(..., ge=0.0, le=1.0, description="Overall score 0.0–1.0")
-    resource_correctness: float = Field(
-        ..., ge=0.0, le=1.0, description="Correctness component score"
-    )
-    security: float = Field(..., ge=0.0, le=1.0, description="Security component score")
-    components: Dict[str, Dict[str, Any]] = Field(
-        description="Breakdown by component: {name: {label, value, max, description}}"
+    components: Dict[str, ScoringComponentResult] = Field(
+        description="Breakdown by component: {name: ScoringComponentResult}"
     )
     passed: bool = Field(description="True if score >= 0.5 (or task-specific threshold)")
-    details: Dict[str, Any] = Field(description="Task-specific details (e.g., bucket info)")
     errors: list[str] = Field(default_factory=list, description="List of errors encountered")
 
 

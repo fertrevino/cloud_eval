@@ -9,7 +9,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from cloud_eval.tools import compute_best_practice_tag_score
-from cloud_eval.verifier import Verifier, VerificationResult, ScoringWeights, ScoringComponent
+from cloud_eval.verifier import Verifier, VerificationResult, ScoringWeights, ScoringComponent, ScoringComponentResult
 
 QUEUE_NAME = "cloud-eval-queue"
 
@@ -56,18 +56,12 @@ class SQSQueueVerifier(Verifier):
         checks = self._check_queue(client)
         components = self._compute_components(checks)
         
-        total_score = sum(c["value"] for c in components.values())
-        security_score = (
-            components["long_polling"]["value"] + components["tags"]["value"]
-        ) / (self.scoring_weights.components["long_polling"].weight + self.scoring_weights.components["tags"].weight)
+        total_score = sum(c.value for c in components.values())
         
         return VerificationResult(
             score=round(total_score, 3),
-            resource_correctness=round(components["exists"]["value"], 3),
-            security=round(security_score, 3),
             components=components,
-            passed=total_score >= 0.5,
-            details=checks,
+            passed=len(checks.get("errors", [])) == 0,
             errors=checks.get("errors", []),
         )
 
@@ -122,7 +116,7 @@ class SQSQueueVerifier(Verifier):
                 result["errors"].append(err.response["Error"]["Message"])
         return result
 
-    def _compute_components(self, checks: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    def _compute_components(self, checks: Dict[str, Any]) -> Dict[str, ScoringComponentResult]:
         """Score each component based on checks."""
         components = {}
         for name, component in self.scoring_weights.components.items():
@@ -135,20 +129,18 @@ class SQSQueueVerifier(Verifier):
             else:
                 value = 0.0
 
-            components[name] = {
-                "label": component.label,
-                "description": component.description,
-                "value": round(value, 3),
-                "max": component.weight,
-            }
+            components[name] = ScoringComponentResult(
+                label=component.label,
+                description=component.description,
+                value=round(value, 3),
+                max=component.weight,
+            )
         return components
 
 
 if __name__ == "__main__":
     # Support old CLI interface for compatibility during transition
     import argparse
-    import json
-    import sys
 
     parser = argparse.ArgumentParser(description="Verify SQS queue creation")
     parser.add_argument("--scenario-path", type=Path, required=True)
