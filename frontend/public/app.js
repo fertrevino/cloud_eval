@@ -1,6 +1,8 @@
 const reportListEl = document.getElementById("report-list");
 const detailEl = document.getElementById("report-detail");
 const runFilterEl = document.getElementById("run-filter");
+const evaluateBtnEl = document.getElementById("evaluate-btn");
+const evaluateStatusEl = document.getElementById("evaluate-status");
 let reports = [];
 let selected = null;
 let selectedRun = null;
@@ -287,6 +289,74 @@ async function selectReport(name, button) {
 
 loadReports();
 setInterval(loadReports, 15000);
+
+// Evaluate button handler
+if (evaluateBtnEl) {
+  evaluateBtnEl.addEventListener("click", async () => {
+    evaluateBtnEl.disabled = true;
+    evaluateStatusEl.textContent = "Starting evaluation...";
+    evaluateStatusEl.style.color = "#3b82f6";
+
+    try {
+      const response = await fetch("/api/evaluate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to start evaluation");
+      }
+
+      const result = await response.json();
+      const runId = result.run_id;
+      evaluateStatusEl.textContent = `Run ${runId.substring(0, 8)}... queued`;
+      evaluateStatusEl.style.color = "#10b981";
+
+      // Poll for completion
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await fetch(`/api/status/${runId}`);
+          if (statusResponse.ok) {
+            const status = await statusResponse.json();
+            if (status.status === "completed") {
+              clearInterval(pollInterval);
+              evaluateStatusEl.textContent = "✓ Completed";
+              evaluateStatusEl.style.color = "#10b981";
+              evaluateBtnEl.disabled = false;
+              // Reload reports after a short delay
+              setTimeout(() => loadReports(), 1000);
+            } else if (status.status === "failed") {
+              clearInterval(pollInterval);
+              evaluateStatusEl.textContent = `✗ Failed: ${status.error || "Unknown error"}`;
+              evaluateStatusEl.style.color = "#ef4444";
+              evaluateBtnEl.disabled = false;
+            } else {
+              evaluateStatusEl.textContent = `Running... (${status.status})`;
+            }
+          }
+        } catch (err) {
+          console.error("Poll error:", err);
+        }
+      }, 2000);
+
+      // Timeout after 30 minutes
+      setTimeout(() => {
+        if (!evaluateBtnEl.disabled) return;
+        clearInterval(pollInterval);
+        evaluateStatusEl.textContent = "Timeout";
+        evaluateStatusEl.style.color = "#ef4444";
+        evaluateBtnEl.disabled = false;
+      }, 30 * 60 * 1000);
+    } catch (err) {
+      evaluateStatusEl.textContent = `Error: ${err.message}`;
+      evaluateStatusEl.style.color = "#ef4444";
+      evaluateBtnEl.disabled = false;
+      console.error("Evaluate error:", err);
+    }
+  });
+}
 
 function renderScoreComponents(components) {
   if (!components || !Object.keys(components).length) {

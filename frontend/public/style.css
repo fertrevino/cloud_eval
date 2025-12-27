@@ -50,12 +50,29 @@ main {
   font-weight: 600;
   color: #0f172a;
 }
-.filter select {
+.filter select,
+.btn-primary {
   padding: 0.5rem 0.75rem;
   border-radius: 0.4rem;
   border: 1px solid #cbd5e1;
   background: #fff;
   font: inherit;
+}
+.btn-primary {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+.btn-primary:hover {
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .report-list button {
   width: 100%;
