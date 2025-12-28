@@ -12,17 +12,19 @@
       <p>Live view of the latest scenario evaluations.</p>
     </header>
     <main>
-      <section class="panel" aria-label="Controls">
-        <div class="filter">
-          <label for="run-filter">Run id</label>
-          <select id="run-filter" aria-label="Run id"></select>
-          <button id="evaluate-btn" class="btn-primary">▶ Run Evaluation</button>
-          <span id="evaluate-status" style="margin-left: 10px; font-size: 0.9em;"></span>
-        </div>
-      </section>
-      <section class="panel" aria-label="Reports">
-        <ul id="report-list" class="report-list"></ul>
-      </section>
+      <aside class="sidebar">
+        <section class="panel" aria-label="Controls">
+          <div class="filter">
+            <label for="run-filter">Run id</label>
+            <select id="run-filter" aria-label="Run id"></select>
+            <button id="evaluate-btn" class="btn-primary">▶ Run Evaluation</button>
+            <span id="evaluate-status" style="margin-left: 10px; font-size: 0.9em;"></span>
+          </div>
+        </section>
+        <section class="panel" aria-label="Reports">
+          <ul id="report-list" class="report-list"></ul>
+        </section>
+      </aside>
       <section class="panel" aria-live="polite">
         <h2>Details</h2>
         <div id="report-detail" class="report-detail">

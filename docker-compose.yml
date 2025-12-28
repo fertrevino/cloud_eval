@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   localstack:
     image: localstack/localstack:latest
@@ -30,6 +28,15 @@ services:
       - ./tasks:/app/tasks:ro
       - ./reports:/app/reports
     entrypoint: ["./entrypoint.sh", "service"]
+    develop:
+      watch:
+        - path: ./src
+          action: rebuild
+        - path: ./agents
+          action: rebuild
+        - path: ./tasks
+          action: sync
+          target: /app/tasks
   frontend:
     build:
       context: ./frontend
@@ -45,3 +52,10 @@ services:
       - PORT=3000
       - REPORTS_DIR=/app/reports
       - SUITE_SERVICE_URL=http://cloud-eval:5000
+    develop:
+      watch:
+        - path: ./frontend/public
+          action: sync
+          target: /app/public
+        - path: ./frontend/server.js
+          action: rebuild

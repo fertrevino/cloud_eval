@@ -90,21 +90,18 @@ async def _run_evaluation_task(run_id: str, tasks_dir: Path, endpoint: str, repo
         # Run in thread pool to avoid blocking event loop
         loop = asyncio.get_event_loop()
         
-        # Create session-specific report directory
-        session_id = run_id
-        session_report_dir = report_dir / session_id
-        
+        # Pass report_dir directly - suite/runner will create timestamp subdirectory
         await loop.run_in_executor(
             None,
             run_suite,
             tasks_dir,
             endpoint,
-            session_report_dir,
+            report_dir,
             agent,
         )
         
         task_store[run_id]["status"] = "completed"
-        task_store[run_id]["report_path"] = str(session_report_dir)
+        task_store[run_id]["report_path"] = str(report_dir)
         logger.info(f"Evaluation {run_id} completed successfully")
     except Exception as exc:
         task_store[run_id]["status"] = "failed"
@@ -206,6 +203,22 @@ def create_app() -> FastAPI:
             logger.warning(f"Failed to list reports: {exc}")
         
         return {"reports": sorted(reports, key=lambda x: x["modified_at"], reverse=True)}
+
+    @app.get("/api/reports/{path:path}")
+    async def get_report(path: str) -> Dict[str, Any]:
+        """Get individual report details."""
+        try:
+            report_file = report_dir / path
+            if not report_file.exists() or not report_file.is_file():
+                raise HTTPException(status_code=404, detail="Report not found")
+            
+            with open(report_file, "r") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid JSON in report file")
+        except Exception as exc:
+            logger.error(f"Failed to load report {path}: {exc}")
+            raise HTTPException(status_code=500, detail=str(exc))
 
     @app.get("/api/runs")
     async def list_runs() -> Dict[str, Any]:
