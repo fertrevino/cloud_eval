@@ -2,7 +2,6 @@
 """Test script for cloud-eval service."""
 import sys
 import os
-from pathlib import Path
 from cloud_eval.service import create_app
 
 # Set dummy endpoint for testing
