@@ -25,12 +25,47 @@ main {
   gap: 1rem;
   padding: 1rem 1.5rem;
 }
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  grid-column: 1;
+  grid-row: 1 / -1;
+}
+.sidebar .panel {
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid #e2e8f0;
+}
+.sidebar .panel:last-child {
+  border-bottom: none;
+  border-radius: 0 0 0.5rem 0.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+}
+.sidebar .panel:first-child {
+  border-radius: 0.5rem 0.5rem 0 0;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+}
+main > .panel {
+  grid-column: 2;
+  grid-row: 1 / -1;
+}
+.panel:nth-child(3) {
+  grid-column: 2;
+  grid-row: 1 / -1;
+}
 .panel {
   background: #fff;
   border-radius: 0.5rem;
   padding: 1rem;
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
   overflow: auto;
+}
+.panel:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+  height: fit-content;
+  padding: 0.75rem;
 }
 .report-list {
   list-style: none;
@@ -43,19 +78,35 @@ main {
 .filter {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
+  gap: 0.5rem;
 }
 .filter label {
   font-weight: 600;
   color: #0f172a;
 }
-.filter select {
+.filter select,
+.btn-primary {
   padding: 0.5rem 0.75rem;
   border-radius: 0.4rem;
   border: 1px solid #cbd5e1;
   background: #fff;
   font: inherit;
+}
+.btn-primary {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+.btn-primary:hover {
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .report-list button {
   width: 100%;

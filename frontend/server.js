@@ -2,12 +2,15 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs/promises");
 const cors = require("cors");
+const http = require("http");
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const reportsDir = path.resolve(process.env.REPORTS_DIR || path.join(__dirname, "reports"));
+const suiteServiceUrl = process.env.SUITE_SERVICE_URL || "http://localhost:5000";
 
 app.use(cors());
+app.use(express.json());
 
 app.get("/", async (req, res, next) => {
   const wantsJson =
@@ -110,6 +113,44 @@ app.get("/api/reports/*", async (req, res) => {
     }
     console.error(err);
     res.status(500).json({ error: "unable to load report" });
+  }
+});
+
+// Proxy to suite service API
+app.post("/api/evaluate", async (req, res) => {
+  try {
+    const response = await fetch(`${suiteServiceUrl}/api/evaluate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    console.error("Error calling suite service:", err);
+    res.status(503).json({ error: "suite service unavailable" });
+  }
+});
+
+app.get("/api/status/:run_id", async (req, res) => {
+  try {
+    const response = await fetch(`${suiteServiceUrl}/api/status/${req.params.run_id}`);
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    console.error("Error calling suite service:", err);
+    res.status(503).json({ error: "suite service unavailable" });
+  }
+});
+
+app.get("/api/runs", async (req, res) => {
+  try {
+    const response = await fetch(`${suiteServiceUrl}/api/runs`);
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    console.error("Error calling suite service:", err);
+    res.status(503).json({ error: "suite service unavailable" });
   }
 });
 
