@@ -3,6 +3,7 @@
 import sys
 import os
 from pathlib import Path
+from cloud_eval.service import create_app
 
 # Set dummy endpoint for testing
 os.environ.setdefault("ENDPOINT_URL", "http://localhost:4566")
@@ -12,7 +13,6 @@ os.environ.setdefault("CLOUD_EVAL_REPORT_DIR", "reports")
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from cloud_eval.service import create_app
 
 
 def test_service():
