@@ -2,7 +2,6 @@
 """Test script for cloud-eval service."""
 import sys
 import os
-import json
 from pathlib import Path
 
 # Set dummy endpoint for testing
@@ -13,7 +12,7 @@ os.environ.setdefault("CLOUD_EVAL_REPORT_DIR", "reports")
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from cloud_eval.service import create_app, EvaluateRequest
+from cloud_eval.service import create_app
 
 
 def test_service():
@@ -29,7 +28,6 @@ def test_service():
         return False
     
     # Test using async client
-    from httpx import AsyncClient
     import asyncio
     
     async def run_tests():
