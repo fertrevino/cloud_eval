@@ -10,10 +10,6 @@ os.environ.setdefault("ENDPOINT_URL", "http://localhost:4566")
 os.environ.setdefault("CLOUD_EVAL_TASKS_DIR", "tasks")
 os.environ.setdefault("CLOUD_EVAL_REPORT_DIR", "reports")
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
-
 
 def test_service():
     """Test the FastAPI service."""
