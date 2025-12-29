@@ -7,7 +7,7 @@
   "difficulty": "L0",
   "tags": ["aws", "sqs", "queue"],
   "notes": [
-    "Enabling long polling is a strong default for SQS queues to reduce costs and improve efficiency. Without further context, tagging resources is a best practice for cost allocation and management.\n[1] https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-best-practices.html."
+    "Enabling long polling is a strong default for SQS queues to reduce costs and improve efficiency. Without further context, tagging resources is a best practice for cost allocation and management."
   ],
   "links": [
     "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-creating-queues.html"
