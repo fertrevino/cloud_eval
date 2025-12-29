@@ -59,6 +59,9 @@ class VerificationResult(BaseModel):
     )
     passed: bool = Field(description="True if score >= 0.5 (or task-specific threshold)")
     errors: list[str] = Field(default_factory=list, description="List of errors encountered")
+    score_details: Dict[str, Dict] = Field(
+        default_factory=dict, description="Optional detailed breakdown for UI consumption"
+    )
 
 
 class Verifier(ABC):

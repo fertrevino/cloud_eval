@@ -4,7 +4,7 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=s3,sqs
+      - SERVICES=s3,sns,sqs
       - DEBUG=0
     healthcheck:
       test: ["CMD", "bash", "-c", "awslocal s3 ls || exit 1"]
@@ -59,3 +59,19 @@ services:
           target: /app/public
         - path: ./frontend/server.js
           action: rebuild
+  auto-run:
+    profiles: ["autorun"]
+    image: curlimages/curl:8.4.0
+    depends_on:
+      - frontend
+    develop:
+      watch: []  # exclude from compose watch to avoid rebuild errors (no build context)
+    entrypoint: >
+      sh -c "
+        echo 'Waiting for frontend...';
+        until curl -sf http://frontend:3000/health >/dev/null 2>&1; do
+          sleep 2;
+        done;
+        echo 'Triggering suite via frontend';
+        curl -X POST http://frontend:3000/api/evaluate
+      "

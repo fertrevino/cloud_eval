@@ -201,10 +201,13 @@ class EvaluationRunner:
         logger.debug("Completed scenario metrics: %s", metrics)
         penalty = metrics.get("error_action_penalty")
         if verification and penalty is not None:
+            # Normalize score_details to ensure components exist for frontend breakdowns
+            if "score_details" not in verification and "components" in verification:
+                verification["score_details"] = {"components": verification.get("components", {})}
             components = verification.get("score_details", {}).get("components")
             if isinstance(components, dict):
                 components["error_action_penalty"] = {
-                    "label": "Penalty (–0.02 per error action)",
+                    "label": "Penalty (-0.02 per error action)",
                     "value": -penalty,
                     "max": None,
                 }
