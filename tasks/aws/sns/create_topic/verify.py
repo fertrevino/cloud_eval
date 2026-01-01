@@ -7,9 +7,14 @@ from typing import Any, Dict
 
 import boto3
 from botocore.exceptions import ClientError
-
 from cloud_eval.tools import compute_best_practice_tag_score
-from cloud_eval.verifier import Verifier, VerificationResult, ScoringWeights, ScoringComponent, ScoringComponentResult
+from cloud_eval.verifier import (
+    Verifier,
+    VerificationResult,
+    ScoringWeights,
+    ScoringComponent,
+    ScoringComponentResult,
+)
 
 TOPIC_NAME = "cloud-eval-topic"
 
@@ -153,23 +158,10 @@ class SNSTopicVerifier(Verifier):
         return components
 
 
-if __name__ == "__main__":
-    # Support old CLI interface for compatibility during transition
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Verify SNS topic creation")
-    parser.add_argument("--scenario-path", type=Path, required=True)
-    parser.add_argument("--localstack-endpoint", required=True)
-    parser.add_argument("--skip-apply", action="store_true", help="Unused, for parity with runner")
-    parser.add_argument("--write-report", type=Path, help="Path to write verification output JSON")
-    parser.add_argument("--steps", type=int, default=0)
-    args = parser.parse_args()
-
-    verifier = SNSTopicVerifier(args.localstack_endpoint, args.scenario_path)
-    result = verifier.verify()
-    output = result.model_dump_json(indent=2)
-    
-    if args.write_report:
-        args.write_report.write_text(output)
-    else:
-        print(output)
+def run_verifier(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Entry point for in-process verification."""
+    endpoint = config.get("localstack_endpoint")
+    scenario_path = config.get("scenario_path")
+    verifier = SNSTopicVerifier(endpoint, Path(scenario_path) if scenario_path else None)
+    result = verifier.run()
+    return result.model_dump()

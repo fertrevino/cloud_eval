@@ -60,7 +60,7 @@ services:
         - path: ./frontend/server.js
           action: rebuild
   auto-run:
-    profiles: ["autorun"]
+    profiles: ["auto-run"]
     image: curlimages/curl:8.4.0
     depends_on:
       - frontend
