@@ -130,14 +130,3 @@ class Verifier(ABC):
         """Run verification and return structured result."""
         pass
 
-
-# Static map of task_id to verifier classes (importable modules under tasks/)
-from tasks.aws.s3.simple_bucket.verify import S3BucketVerifier  # noqa: E402
-from tasks.aws.sqs.create_queue.verify import SQSQueueVerifier  # noqa: E402
-from tasks.aws.sns.create_topic.verify import SNSTopicVerifier  # noqa: E402
-
-STATIC_VERIFIER_CLASSES: Dict[str, type[Verifier]] = {
-    "cloud-eval-s3-simple-bucket": S3BucketVerifier,
-    "aws-sqs-create-queue": SQSQueueVerifier,
-    "aws-sns-create-topic": SNSTopicVerifier,
-}

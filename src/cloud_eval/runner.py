@@ -15,7 +15,8 @@ from . import __version__
 from .agent_config import AgentDefinition
 from .reporting import ActionLog, EvaluationReport, ReportMetrics
 from .scenario import Scenario
-from .verifier import STATIC_VERIFIER_CLASSES, ScoreDetailComponent, VerificationResult
+from .verifier import ScoreDetailComponent, VerificationResult
+from .verifiers_run import VERIFIERS
 
 console = Console()
 logger = logging.getLogger("cloud_eval.runner")
@@ -101,7 +102,7 @@ class EvaluationRunner:
 
     def _run_verification(self, steps: int) -> Optional[VerificationResult]:
         try:
-            verifier_cls = STATIC_VERIFIER_CLASSES[self.scenario.task_id]
+            verifier_cls = VERIFIERS[self.scenario.task_id]
             verifier = verifier_cls(self.localstack_endpoint, self.scenario_path)
             result = verifier.run()
             return result
