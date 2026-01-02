@@ -1,0 +1,20 @@
+{
+  "task_id": "cloud-eval-s3-application-logs",
+  "task_name": "s3-application-logs",
+  "category_id": "aws-s3",
+  "category_name": "AWS S3 Tasks",
+  "description": "Create an S3 bucket for application logs in us-east-1 with a 6-month retention policy.",
+  "author": "Fernando Trevino",
+  "created_at": "2025-12-23",
+  "difficulty": "L0",
+  "tags": ["s3", "logging", "lifecycle", "retention"],
+  "notes": [
+    "Bucket name is predefined and must exist in us-east-1.",
+    "Lifecycle configuration should expire objects after roughly six months (~180 days) to satisfy log retention requirements.",
+    "Applying public access blocks, default encryption, and tags follows S3 best practices even when not explicitly requested."
+  ],
+  "max_steps": 12,
+  "links": [
+    "https://docs.aws.amazon.com/AmazonS3/latest/userguide/SettingLifecycleConfiguration.html"
+  ]
+}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from importlib import import_module
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Optional
@@ -13,14 +14,34 @@ from .agent_config import AgentDefinition, load_agent_definitions, select_agent
 from .logging_config import configure_logging
 from .runner import EvaluationRunner
 from .scenario import load_scenario
+from .verifiers_run import VERIFIERS
 
 console = Console()
 
 
 def _discover_scenarios(root: Path) -> Iterable[Path]:
-    for meta_path in sorted(root.rglob("meta.json")):
-        if (meta_path.parent / "verify.py").exists():
-            yield meta_path
+    """Yield scenario meta paths based on registered verifiers."""
+    root = root.resolve()
+    for task_id, verifier_cls in VERIFIERS.items():
+        try:
+            module = import_module(verifier_cls.__module__)
+            module_file = getattr(module, "__file__", None)
+            if not module_file:
+                console.print(f"[yellow]Skipping {task_id}: cannot resolve module file[/yellow]")
+                continue
+            meta_path = (Path(module_file).parent / "meta.json").resolve()
+        except Exception as exc:
+            console.print(f"[yellow]Skipping {task_id}: unable to resolve meta path ({exc})[/yellow]")
+            continue
+
+        if not meta_path.exists():
+            console.print(f"[yellow]Skipping {task_id}: meta.json not found at {meta_path}[/yellow]")
+            continue
+        if root not in meta_path.parents and meta_path != root:
+            console.print(f"[yellow]Skipping {task_id}: meta.json not under tasks_dir ({meta_path})[/yellow]")
+            continue
+
+        yield meta_path
 
 
 def run_suite(
@@ -32,7 +53,7 @@ def run_suite(
     tasks_dir = tasks_dir.resolve()
     scenarios = list(_discover_scenarios(tasks_dir))
     if not scenarios:
-        raise SystemExit(f"No scenarios found under {tasks_dir}")
+        raise SystemExit(f"No scenarios with registered verifiers found under {tasks_dir}")
 
     report_dir.mkdir(parents=True, exist_ok=True)
     session_label = datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")

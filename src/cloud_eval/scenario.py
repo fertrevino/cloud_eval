@@ -19,14 +19,13 @@ class TaskMetadata:
     tags: List[str]
     notes: List[str] = field(default_factory=list)
     links: List[str] = field(default_factory=list)
-    expected_steps: int = 0
+    max_steps: Optional[int] = None
 
 
 @dataclass
 class ScenarioScoring:
     weights: Dict[str, float]
     max_time_seconds: Optional[float] = None
-    max_steps: Optional[int] = None
 
 
 @dataclass
@@ -85,7 +84,7 @@ def load_scenario(meta_path: Path) -> Scenario:
         tags=data.get("tags", []),
         notes=data.get("notes", []),
         links=data.get("links", []),
-        expected_steps=data.get("expected_steps", 0),
+        max_steps=data.get("max_steps"),
     )
     return Scenario(
         metadata=metadata,
@@ -93,7 +92,6 @@ def load_scenario(meta_path: Path) -> Scenario:
         scoring=ScenarioScoring(
             weights=scoring_spec.get("weights", {"resource_correctness": 1.0}),
             max_time_seconds=scoring_spec.get("max_time_seconds"),
-            max_steps=scoring_spec.get("max_steps"),
         ),
         task_description=description,
     )
