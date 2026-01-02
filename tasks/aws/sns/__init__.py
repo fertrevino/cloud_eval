@@ -1,0 +1,1 @@
+"""SNS task package marker."""

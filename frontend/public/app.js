@@ -22,6 +22,23 @@ function formatNumber(value, digits = 2) {
   return Number(value).toFixed(digits);
 }
 
+function withPenaltyComponent(components, metrics) {
+  const result = { ...(components || {}) };
+  const penalty = metrics?.error_action_penalty;
+  if (penalty == null) {
+    return result;
+  }
+  if (result.error_action_penalty) {
+    return result;
+  }
+  result.error_action_penalty = {
+    label: "Penalty (-0.02 per error action)",
+    value: -Math.abs(penalty),
+    max: null,
+  };
+  return result;
+}
+
 function formatTitleFromSlug(slug) {
   if (!slug) {
     return "Report";
@@ -123,7 +140,9 @@ function renderReport(report) {
 
   const metrics = report.metrics || {};
   const actions = report.actions || [];
-  const scoreComponents = report.verification?.components || {};
+  const baseComponents =
+    report.verification?.score_details?.components || report.verification?.components || {};
+  const scoreComponents = withPenaltyComponent(baseComponents, metrics);
 
   const taskLabel = report.task_name || report.task_id || report.scenario || "task";
   detailEl.innerHTML = `
@@ -134,7 +153,6 @@ function renderReport(report) {
         <strong>Score:</strong> ${formatNumber(metrics.score)}<br>
         <strong>Duration:</strong> ${prettyDuration(metrics.duration_seconds || 0)}s<br>
         <strong>Step count:</strong> ${metrics.step_count || 0}<br>
-        ${renderPenalty(metrics.error_action_penalty)}
       </div>
       ${renderScoreComponents(scoreComponents)}
     </section>

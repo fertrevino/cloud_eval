@@ -3,8 +3,12 @@ Standardized verification interface and data models.
 
 All task verifiers inherit from Verifier and return VerificationResult.
 """
+from __future__ import annotations
+
+import time
 from abc import ABC, abstractmethod
-from typing import Dict
+from pathlib import Path
+from typing import Dict, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -50,6 +54,30 @@ class ScoringComponentResult(BaseModel):
     max: float = Field(..., ge=0.0, le=1.0, description="Maximum possible weight for this component")
 
 
+class TimingInfo(BaseModel):
+    """Timing metadata for a verifier step."""
+
+    started_at: float = Field(description="Wall-clock start time (epoch seconds)")
+    ended_at: float = Field(description="Wall-clock end time (epoch seconds)")
+    duration_seconds: float = Field(description="Elapsed seconds (end-start)")
+
+
+class ScoreDetailComponent(BaseModel):
+    """Additional score component not part of the primary scoring."""
+
+    label: str
+    value: float
+    max: Optional[float] = None
+    description: str = ""
+
+
+class ScoreDetails(BaseModel):
+    """Structured container for auxiliary scoring and timing details."""
+
+    timing: Optional[TimingInfo] = Field(default=None)
+    components: Dict[str, ScoreDetailComponent] = Field(default_factory=dict)
+
+
 class VerificationResult(BaseModel):
     """Standard verification output returned by all Verifier implementations."""
 
@@ -59,6 +87,19 @@ class VerificationResult(BaseModel):
     )
     passed: bool = Field(description="True if score >= 0.5 (or task-specific threshold)")
     errors: list[str] = Field(default_factory=list, description="List of errors encountered")
+    score_details: ScoreDetails = Field(default_factory=ScoreDetails, description="Auxiliary scoring metadata")
+
+
+class VerificationConfig(BaseModel):
+    """Configuration for running a verifier."""
+
+    localstack_endpoint: str
+    scenario_path: str
+    steps: int = 0
+
+    @property
+    def scenario_path_obj(self) -> Path:
+        return Path(self.scenario_path)
 
 
 class Verifier(ABC):
@@ -71,11 +112,21 @@ class Verifier(ABC):
         """Initialize verifier with LocalStack endpoint."""
         self.endpoint = localstack_endpoint
 
+    def run(self) -> VerificationResult:
+        """Execute verification and record timing metadata."""
+        started_at = time.time()
+        result = self.verify()
+        ended_at = time.time()
+        duration = ended_at - started_at
+        result.score_details.timing = TimingInfo(
+            started_at=started_at,
+            ended_at=ended_at,
+            duration_seconds=round(duration, 3),
+        )
+        return result
+
     @abstractmethod
     def verify(self) -> VerificationResult:
-        """Run verification and return structured result.
-        
-        Returns:
-            VerificationResult: Scored and validated verification result.
-        """
+        """Run verification and return structured result."""
         pass
+

@@ -10,7 +10,13 @@ import boto3
 from botocore.exceptions import ClientError
 
 from cloud_eval.tools import compute_best_practice_tag_score
-from cloud_eval.verifier import Verifier, VerificationResult, ScoringWeights, ScoringComponent, ScoringComponentResult
+from cloud_eval.verifier import (
+    Verifier,
+    VerificationResult,
+    ScoringWeights,
+    ScoringComponent,
+    ScoringComponentResult,
+)
 
 logger = logging.getLogger("cloud_eval.verify.s3")
 
@@ -286,50 +292,15 @@ class S3BucketVerifier(Verifier):
                 description=component.description,
                 value=round(average, 3),
                 max=component.weight,
-            )
+        )
         
         return final_score, component_details, errors
 
 
-if __name__ == "__main__":
-    # Support old CLI interface for compatibility during transition
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Verify S3 bucket creation")
-    parser.add_argument(
-        "--scenario-path",
-        type=Path,
-        default=Path(__file__).parent / "meta.json",
-        help="Path to the scenario metadata file for this task.",
-    )
-    parser.add_argument(
-        "--localstack-endpoint",
-        required=True,
-        help="LocalStack endpoint URL.",
-    )
-    parser.add_argument(
-        "--write-report",
-        type=Path,
-        help="Write the verification summary as JSON to this path after the run.",
-    )
-    parser.add_argument(
-        "--steps",
-        type=int,
-        default=0,
-        help="Number of steps (aws_cli actions) taken during the run.",
-    )
-    parser.add_argument(
-        "--skip-apply",
-        action="store_true",
-        help="Accepts the flag so that the runner can skip apply but still run verification.",
-    )
-    args = parser.parse_args()
-
-    verifier = S3BucketVerifier(args.localstack_endpoint, args.scenario_path)
-    result = verifier.verify()
-    
-    if args.write_report:
-        args.write_report.write_text(result.model_dump_json(indent=2))
-    else:
-        print(result.model_dump_json(indent=2))
-
+def run_verifier(config: dict) -> dict:
+    """Entry point for in-process verification."""
+    endpoint = config.get("localstack_endpoint")
+    scenario_path = config.get("scenario_path")
+    verifier = S3BucketVerifier(endpoint, Path(scenario_path) if scenario_path else None)
+    result = verifier.run()
+    return result.model_dump()
