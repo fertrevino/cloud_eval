@@ -22,6 +22,7 @@ configure_logging()
 logger = logging.getLogger("cloud_eval.agents.openai_agent")
 
 ActionRecord = Dict[str, Any]
+DEFAULT_MAX_AGENT_STEPS = 6
 
 
 def _validate_env(env: Dict[str, str]) -> str:
@@ -93,9 +94,10 @@ def run_agent(scenario_path: Path, env: Dict[str, str]) -> List[ActionRecord]:
     raw = json.loads(scenario_path.read_text())
     messages = _build_messages(scenario, raw)
     tools = REGISTRY.descriptions()
+    step_limit = (scenario.metadata.max_steps or 0) or DEFAULT_MAX_AGENT_STEPS
 
     actions: List[ActionRecord] = []
-    for _ in range(6):
+    for _ in range(step_limit):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Constructed prompt:\n%s", json.dumps(messages, indent=2))
         response = openai_client.chat.completions.create(
