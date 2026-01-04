@@ -5,7 +5,7 @@ import logging
 import os
 import time
 from datetime import datetime
-from importlib import import_module
+from importlib import import_module, util
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -100,6 +100,26 @@ class EvaluationRunner:
             )
         return logs
 
+    def _run_setup(self) -> None:
+        """Run optional task-specific setup if setup.py is present."""
+        setup_path = self.scenario_path.parent / "setup.py"
+        if not setup_path.exists():
+            logger.debug("No setup.py found for scenario %s; skipping setup", self.scenario.task_id)
+            return
+
+        spec = util.spec_from_file_location("cloud_eval.task_setup", setup_path)
+        if not spec or not spec.loader:
+            raise RuntimeError(f"Unable to load setup module at {setup_path}")
+
+        module = util.module_from_spec(spec)
+        spec.loader.exec_module(module)  # type: ignore[call-arg]
+        run_setup = getattr(module, "run_setup", None)
+        if not callable(run_setup):
+            raise RuntimeError(f"setup.py at {setup_path} must define run_setup(endpoint, scenario_path)")
+
+        logger.info("Running setup for task %s from %s", self.scenario.task_id, setup_path)
+        run_setup(self.localstack_endpoint, self.scenario_path)
+
     def _run_verification(self, steps: int) -> Optional[VerificationResult]:
         try:
             verifier_cls = VERIFIERS[self.scenario.task_id]
@@ -144,6 +164,7 @@ class EvaluationRunner:
         )
         console.print(f"Ensuring LocalStack is reachable at {self.localstack_endpoint}")
 
+        self._run_setup()
         actions = self._run_agent()
         verification = self._run_verification(len(actions))
         metrics = self._score(actions, verification)
