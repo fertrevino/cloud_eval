@@ -75,17 +75,17 @@ function renderLog(value) {
   }
   const escaped = escapeHtml(text);
   if (text.length <= LOG_PREVIEW_LIMIT) {
-    return `<pre>${escaped}</pre>`;
+    return `<pre class="log-inline">${escaped}</pre>`;
   }
-  const preview = escapeHtml(text.slice(0, LOG_PREVIEW_LIMIT));
+  const preview = escapeHtml(text.slice(0, 40));
   return `
-    <div class="log-block">
-      <pre class="log-preview">${preview}…</pre>
-      <details class="log-full">
-        <summary>Show full output (${text.length} chars)</summary>
-        <pre>${escaped}</pre>
-      </details>
-    </div>
+    <details class="log-block">
+      <summary class="log-summary">
+        <span class="log-summary-label">Show full output (${text.length} chars)</span>
+        <span class="log-summary-preview">${preview}…</span>
+      </summary>
+      <pre>${escaped}</pre>
+    </details>
   `;
 }
 
