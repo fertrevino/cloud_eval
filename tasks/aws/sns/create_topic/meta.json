@@ -4,7 +4,7 @@
   "category_id": "sns",
   "category_name": "Amazon SNS",
   "description": "Create an SNS topic with proper attributes and tags applied.",
-  "difficulty": "L0",
+  "difficulty": "easy",
   "tags": ["aws", "sns", "topic"],
   "notes": [
     "SNS topics are the foundation for publish-subscribe messaging in AWS. Applying tags to topics enables better cost allocation and resource management."

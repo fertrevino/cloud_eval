@@ -11,6 +11,22 @@ const LOG_PREVIEW_LIMIT = 600;
 
 const escapeHtml = (value) => (value ? value.toString().replace(/</g, "&lt;") : "");
 
+function normalizeDifficulty(raw) {
+  if (!raw || typeof raw !== "string") return "";
+  const val = raw.toLowerCase();
+  if (val.startsWith("easy")) return "easy";
+  if (val.startsWith("med")) return "medium";
+  if (val.startsWith("hard")) return "hard";
+  return raw;
+}
+
+function renderDifficultyChip(rawDifficulty) {
+  const difficulty = normalizeDifficulty(rawDifficulty);
+  if (!difficulty) return "";
+  const label = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+  return `<span class="chip chip-${difficulty}">${label}</span>`;
+}
+
 function prettyDuration(record) {
   return record.toFixed(2);
 }
@@ -145,9 +161,13 @@ function renderReport(report) {
   const scoreComponents = withPenaltyComponent(baseComponents, metrics);
 
   const taskLabel = report.task_name || report.task_id || report.scenario || "task";
+  const difficultyChip = renderDifficultyChip(report.difficulty);
   detailEl.innerHTML = `
     <section>
-      <h3>Task: ${taskLabel}</h3>
+      <div class="task-header">
+        <h3>Task: ${taskLabel}</h3>
+        ${difficultyChip}
+      </div>
       <p>${report.description || "no description"}</p>
       <div class="metrics">
         <strong>Score:</strong> ${formatNumber(metrics.score)}<br>

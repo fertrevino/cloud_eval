@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -15,7 +16,7 @@ class TaskMetadata:
     metadata_description: Optional[str]
     author: Optional[str]
     created_at: Optional[str]
-    difficulty: Optional[str]
+    difficulty: "DifficultyLevel"
     tags: List[str]
     notes: List[str] = field(default_factory=list)
     links: List[str] = field(default_factory=list)
@@ -66,12 +67,24 @@ def _read_description(meta_path: Path) -> str:
         return desc_path.read_text()
     return ""
 
+class DifficultyLevel(Enum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+
 
 def load_scenario(meta_path: Path) -> Scenario:
     data = json.loads(meta_path.read_text())
     description = _read_description(meta_path)
     scenario_spec: Dict[str, Any] = data.get("scenario") or data
     scoring_spec = scenario_spec.get("scoring", {}) or {}
+    raw_difficulty = data.get("difficulty")
+    if not raw_difficulty:
+        raise ValueError(f"difficulty is required and must be one of {[d.value for d in DifficultyLevel]}")
+    try:
+        difficulty = DifficultyLevel(str(raw_difficulty).strip().lower())
+    except ValueError as exc:
+        raise ValueError(f"Invalid difficulty '{raw_difficulty}'. Expected one of {[d.value for d in DifficultyLevel]}") from exc
     metadata = TaskMetadata(
         task_id=data.get("task_id", scenario_spec.get("name", "unnamed")),
         task_name=data.get("task_name") or scenario_spec.get("name") or data.get("task_id", "unnamed"),
@@ -80,7 +93,7 @@ def load_scenario(meta_path: Path) -> Scenario:
         metadata_description=data.get("description", description),
         author=data.get("author"),
         created_at=data.get("created_at"),
-        difficulty=data.get("difficulty"),
+        difficulty=difficulty,
         tags=data.get("tags", []),
         notes=data.get("notes", []),
         links=data.get("links", []),

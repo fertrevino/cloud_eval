@@ -4,7 +4,7 @@
   "category_id": "sqs",
   "category_name": "Amazon SQS",
   "description": "Create an SQS queue with long polling enabled and tags applied.",
-  "difficulty": "L0",
+  "difficulty": "easy",
   "tags": ["aws", "sqs", "queue"],
   "notes": [
     "Enabling long polling is a strong default for SQS queues to reduce costs and improve efficiency. Without further context, tagging resources is a best practice for cost allocation and management."

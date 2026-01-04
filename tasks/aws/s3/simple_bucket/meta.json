@@ -6,7 +6,7 @@
   "description": "Demonstrate creating and configuring an S3 bucket securely by default.",
   "author": "Fernando Trevino",
   "created_at": "2025-12-23",
-  "difficulty": "L0",
+  "difficulty": "easy",
   "tags": ["s3"],
   "notes": [
     "Bucket names must be globally unique accross all AWS accounts, hence having a Global Unique Identifier (GUID) as part of the bucket name is recommended. Without further context in the prompt, it is expected that creating a bucket follows security practices such as blocking public access."

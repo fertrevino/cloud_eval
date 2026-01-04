@@ -165,6 +165,37 @@ main > .panel {
   border-radius: 0.5rem;
   overflow-x: auto;
 }
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+  text-transform: capitalize;
+}
+.chip-easy {
+  background: #ecfdf3;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.chip-medium {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+.chip-hard {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecdd3;
+}
 .table pre {
   white-space: pre-wrap;
   word-break: break-word;
