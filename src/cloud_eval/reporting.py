@@ -63,7 +63,7 @@ class EvaluationReport:
             "category_id": self.category_id,
             "category_name": self.category_name,
             "description": self.description,
-            "difficulty": self.difficulty,
+            "difficulty": self.difficulty.value if hasattr(self.difficulty, "value") else self.difficulty,
             "notes": self.notes,
             "links": self.links,
             "actions": [action.to_dict() for action in self.actions],

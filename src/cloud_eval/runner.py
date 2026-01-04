@@ -197,7 +197,7 @@ class EvaluationRunner:
             category_id=self.scenario.category_id,
             category_name=self.scenario.category_name,
             description=self.scenario.description,
-            difficulty=self.scenario.metadata.difficulty,
+            difficulty=self.scenario.metadata.difficulty.value,
             notes=self.scenario.metadata.notes,
             links=self.scenario.metadata.links,
             actions=actions,
