@@ -15,7 +15,7 @@ class TaskMetadata:
     metadata_description: Optional[str]
     author: Optional[str]
     created_at: Optional[str]
-    difficulty: Optional[str]
+    difficulty: str
     tags: List[str]
     notes: List[str] = field(default_factory=list)
     links: List[str] = field(default_factory=list)
@@ -67,6 +67,19 @@ def _read_description(meta_path: Path) -> str:
     return ""
 
 
+DIFFICULTY_LEVELS = ("easy", "medium", "hard")
+
+
+def _parse_difficulty(raw: str | None) -> str:
+    """Normalize and validate difficulty."""
+    if not raw:
+        raise ValueError(f"difficulty is required and must be one of {DIFFICULTY_LEVELS}")
+    normalized = raw.strip().lower()
+    if normalized not in DIFFICULTY_LEVELS:
+        raise ValueError(f"Invalid difficulty '{raw}'. Expected one of {DIFFICULTY_LEVELS}")
+    return normalized
+
+
 def load_scenario(meta_path: Path) -> Scenario:
     data = json.loads(meta_path.read_text())
     description = _read_description(meta_path)
@@ -80,7 +93,7 @@ def load_scenario(meta_path: Path) -> Scenario:
         metadata_description=data.get("description", description),
         author=data.get("author"),
         created_at=data.get("created_at"),
-        difficulty=data.get("difficulty"),
+        difficulty=_parse_difficulty(data.get("difficulty")),
         tags=data.get("tags", []),
         notes=data.get("notes", []),
         links=data.get("links", []),

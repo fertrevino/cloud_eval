@@ -6,7 +6,7 @@
   "description": "Create an S3 bucket for application logs in us-east-1 with a 6-month retention policy.",
   "author": "Fernando Trevino",
   "created_at": "2025-12-23",
-  "difficulty": "L0",
+  "difficulty": "easy",
   "tags": ["s3", "logging", "lifecycle", "retention"],
   "notes": [
     "Bucket name is predefined and must exist in us-east-1.",

@@ -45,6 +45,7 @@ class EvaluationReport:
     category_id: Optional[str]
     category_name: Optional[str]
     description: str
+    difficulty: str
     notes: List[str]
     links: List[str]
     actions: List[ActionLog]
@@ -62,6 +63,7 @@ class EvaluationReport:
             "category_id": self.category_id,
             "category_name": self.category_name,
             "description": self.description,
+            "difficulty": self.difficulty,
             "notes": self.notes,
             "links": self.links,
             "actions": [action.to_dict() for action in self.actions],
