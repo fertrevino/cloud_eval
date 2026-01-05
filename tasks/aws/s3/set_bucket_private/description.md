@@ -1,1 +1,0 @@
-Review the S3 bucket application-storage-873dafa5-ccef-4ab6-8b4b-454f34041350 and ensure it is private if it is not already. This includes configuring safeguards to prevent accidental public exposure of data.

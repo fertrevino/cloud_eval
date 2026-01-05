@@ -1,1 +1,0 @@
-"""AWS task package marker."""

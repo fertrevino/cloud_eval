@@ -1,1 +1,0 @@
-"""SQS task package marker."""

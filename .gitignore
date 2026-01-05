@@ -1,9 +1,0 @@
-__pycache__/
-.pytest_cache/
-.ruff_cache/
-.venv/
-reports/
-.env
-.localstack/
-*.pyc
-TODO.md

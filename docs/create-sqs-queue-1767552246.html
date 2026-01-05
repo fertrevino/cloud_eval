@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cloud Eval Report - Create SQS queue</title>
+  <style>
+  :root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+header {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 1rem 1.5rem;
+}
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+main {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  grid-column: 1;
+  grid-row: 1 / -1;
+}
+.sidebar .panel {
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid #e2e8f0;
+}
+.sidebar .panel:last-child {
+  border-bottom: none;
+  border-radius: 0 0 0.5rem 0.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+}
+.sidebar .panel:first-child {
+  border-radius: 0.5rem 0.5rem 0 0;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+}
+main > .panel {
+  grid-column: 2;
+  grid-row: 1 / -1;
+}
+.panel:nth-child(3) {
+  grid-column: 2;
+  grid-row: 1 / -1;
+}
+.panel {
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+  overflow: auto;
+}
+.panel:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+  height: fit-content;
+  padding: 0.75rem;
+}
+.report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.filter label {
+  font-weight: 600;
+  color: #0f172a;
+}
+.filter select,
+.btn-primary {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.4rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font: inherit;
+}
+.btn-primary {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+.btn-primary:hover {
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.report-list button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  padding: 0.85rem;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  line-height: 1.35;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+.report-list button:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+.report-list button.selected {
+  background: #0f172a;
+  color: #fff;
+  border-color: #0f172a;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+}
+.report-title {
+  font-weight: 600;
+  color: #0f172a;
+}
+.report-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: #475569;
+  font-size: 0.9rem;
+}
+.report-path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+.report-list button.selected .report-title,
+.report-list button.selected .report-meta {
+  color: #e2e8f0;
+}
+.report-list button.selected .report-path {
+  color: #cbd5e1;
+}
+.report-detail pre {
+  background: #f1f5f9;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+  text-transform: capitalize;
+}
+.chip-easy {
+  background: #ecfdf3;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.chip-medium {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+.chip-hard {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecdd3;
+}
+.table pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: hidden;
+}
+.log-block {
+  display: block;
+  margin: 0.25rem 0;
+}
+.log-block summary {
+  cursor: pointer;
+  color: #0f172a;
+  font-weight: 600;
+  list-style: none;
+  padding: 0.25rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+.log-block summary::-webkit-details-marker {
+  display: none;
+}
+.log-summary::before {
+  content: "▶";
+  display: inline-block;
+  margin-right: 0.35rem;
+  font-size: 0.8rem;
+}
+.log-block[open] .log-summary::before {
+  content: "▼";
+}
+.log-summary-label {
+  font-weight: 700;
+}
+.log-summary-preview {
+  max-width: 32ch;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  color: #475569;
+}
+.log-block summary:focus-visible {
+  outline: 2px solid #0f172a;
+  outline-offset: 2px;
+}
+.log-inline {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+.table th,
+.table td {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+.status-ok {
+  color: #059669;
+}
+.status-error {
+  color: #dc2626;
+}
+.score-components {
+  margin-top: 0.75rem;
+}
+.score-components table td:nth-child(2),
+.score-components table td:nth-child(3) {
+  text-align: center;
+}
+.score-components table th:nth-child(2),
+.score-components table th:nth-child(3) {
+  text-align: center;
+}
+.note + .note {
+  margin-top: 0.5rem;
+}
+.link-list {
+  padding-left: 1.25rem;
+  margin: 0.25rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.link-list a {
+  color: #0f172a;
+  font-weight: 600;
+  word-break: break-all;
+}
+@media (max-width: 900px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+}
+
+  /* Minimal extras for standalone rendering */
+  body { background: #f8fafc; color: #0f172a; margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  main { max-width: 1100px; margin: 1.25rem auto; padding: 0 1rem; }
+  h1 { margin-bottom: 0.25rem; }
+  .panel { background: #fff; border-radius: 0.5rem; padding: 1rem; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1); margin-bottom: 1rem; }
+  .task-header { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; padding: 0.15rem 0.55rem; border-radius: 999px; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.01em; text-transform: capitalize; }
+  .chip-easy { background: #ecfdf3; color: #15803d; border: 1px solid #bbf7d0; }
+  .chip-medium { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+  .chip-hard { background: #fef2f2; color: #b91c1c; border: 1px solid #fecdd3; }
+  .metrics strong { display: inline-block; width: 110px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 0.35rem 0.5rem; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+  .status-ok { color: #059669; }
+  .status-error { color: #dc2626; }
+  .note + .note { margin-top: 0.5rem; }
+  .link-list { padding-left: 1.25rem; margin: 0.25rem 0 0; display: flex; flex-direction: column; gap: 0.25rem; }
+  .log-block { display: block; margin: 0.25rem 0; }
+  .log-block summary { cursor: pointer; color: #0f172a; font-weight: 600; list-style: none; padding: 0.25rem 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+  .log-block summary::-webkit-details-marker { display: none; }
+  .log-summary::before { content: "▶"; display: inline-block; margin-right: 0.35rem; font-size: 0.8rem; }
+  .log-block[open] .log-summary::before { content: "▼"; }
+  .log-summary-label { font-weight: 700; }
+  .log-summary-preview { max-width: 32ch; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; color: #475569; }
+  pre { background: #f1f5f9; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Cloud Eval Report</h1>
+    <div id="app" class="panel">Loading report…</div>
+  </main>
+  <script type="application/json" id="report-data">{"task_id":"aws-sqs-create-queue","task_name":"Create SQS queue","category_id":"sqs","category_name":"Amazon SQS","description":"Create an SQS queue with long polling enabled and tags applied.","difficulty":"easy","notes":["Enabling long polling is a strong default for SQS queues to reduce costs and improve efficiency. Without further context, tagging resources is a best practice for cost allocation and management."],"links":["https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-creating-queues.html"],"actions":[{"timestamp":1767552244.6074355,"action":"aws_cli","resource":"aws --endpoint-url http://localstack:4566 sqs create-queue --queue-name cloud-eval-queue --region us-east-1","status":"ok","metadata":{"args":{"command":"aws sqs create-queue --queue-name cloud-eval-queue --region us-east-1"},"result":{"command":"aws sqs create-queue --queue-name cloud-eval-queue --region us-east-1","invoked_command":"aws --endpoint-url http://localstack:4566 sqs create-queue --queue-name cloud-eval-queue --region us-east-1","return_code":0,"stdout":"{\n    \"QueueUrl\": \"http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/cloud-eval-queue\"\n}","stderr":""},"llm_trace":{"prompt":[{"role":"system","content":"You control AWS resources via a single aws_cli tool. Only use tool calls to change resource state and never respond directly."},{"role":"user","content":"Task description:\nCreate an SQS queue named `cloud-eval-queue` in the us-east-1 region.\n"}],"assistant":{"role":"assistant","content":"","function_call":{"name":"aws_cli","arguments":"{\"command\":\"aws sqs create-queue --queue-name cloud-eval-queue --region us-east-1\"}"}}}}}],"metrics":{"duration_seconds":0.03,"step_count":1,"score":0.8,"cost_estimate_usd":0,"error_action_penalty":0},"verification":{"score":0.8,"components":{"exists":{"label":"Queue exists","description":"Queue was successfully created","value":0.8,"max":0.8},"long_polling":{"label":"Long polling enabled","description":"ReceiveMessageWaitTimeSeconds > 0","value":0,"max":0.1},"tags":{"label":"Tags applied","description":"Best-practice tags present on queue","value":0,"max":0.1}},"passed":true,"errors":[],"score_details":{"timing":{"started_at":1767552246.8746285,"ended_at":1767552246.9045482,"duration_seconds":0.03},"components":{"exists":{"label":"Queue exists","value":0.8,"max":0.8,"description":"Queue was successfully created"},"long_polling":{"label":"Long polling enabled","value":0,"max":0.1,"description":"ReceiveMessageWaitTimeSeconds > 0"},"tags":{"label":"Tags applied","value":0,"max":0.1,"description":"Best-practice tags present on queue"}}}},"started_at":1767552246.8746285,"generated_at":1767552246.9047961,"endpoint_url":"http://localstack:4566"}</script>
+  <script>
+  const LOG_PREVIEW_LIMIT = 40;
+  const report = JSON.parse(document.getElementById("report-data").textContent || "{}");
+
+  const escapeHtml = (value) => (value ? value.toString().replace(/</g, "&lt;").replace(/>/g, "&gt;") : "");
+  function formatNumber(value, digits = 2) {
+    if (value == null || Number.isNaN(value)) return "-";
+    return Number(value).toFixed(digits);
+  }
+  function prettyDuration(val) {
+    if (val == null || Number.isNaN(val)) return "-";
+    return Number(val).toFixed(2);
+  }
+  function normalizeDifficulty(raw) {
+    if (!raw || typeof raw !== "string") return "";
+    const val = raw.toLowerCase();
+    if (val.startsWith("easy")) return "easy";
+    if (val.startsWith("med")) return "medium";
+    if (val.startsWith("hard")) return "hard";
+    return raw;
+  }
+  function renderDifficultyChip(raw) {
+    const difficulty = normalizeDifficulty(raw);
+    if (!difficulty) return "";
+    const label = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+    return `<span class="chip chip-${difficulty}">${label}</span>`;
+  }
+  function renderScoreComponents(components) {
+    if (!components || !Object.keys(components).length) return "";
+    const rows = Object.entries(components)
+      .map(([key, component]) => {
+        if (!component || typeof component !== "object") return "";
+        const label = component.label || key;
+        const formattedValue = formatNumber(component.value, 2);
+        const formattedMax = formatNumber(component.max, 2);
+        return `<tr><td>${label}</td><td>${formattedValue}</td><td>${formattedMax}</td></tr>`;
+      })
+      .join("");
+    return `
+      <div class="score-components">
+        <h4>Score breakdown</h4>
+        <table class="table">
+          <thead><tr><th></th><th>Value</th><th>Max</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+  function renderNotes(notes) {
+    if (!notes || !notes.length) return "";
+    const items = notes.map((note) => `<article class="note"><p>${escapeHtml(note)}</p></article>`).join("");
+    return `<section><h4>Notes</h4>${items}</section>`;
+  }
+  function renderLinks(links) {
+    if (!links || !links.length) return "";
+    const items = links
+      .map((link) => {
+        if (!link) return "";
+        const isUrl = typeof link === "string" && link.startsWith("http");
+        const escaped = escapeHtml(link);
+        const body = isUrl ? `<a href="${escaped}" target="_blank" rel="noopener noreferrer">${escaped}</a>` : escaped;
+        return `<li>${body}</li>`;
+      })
+      .join("");
+    if (!items) return "";
+    return `<section><h4>Links</h4><ul class="link-list">${items}</ul></section>`;
+  }
+  function renderLog(value) {
+    const text = value == null ? "" : value.toString();
+    if (!text) return "<pre>-</pre>";
+    const escaped = escapeHtml(text);
+    if (text.length <= LOG_PREVIEW_LIMIT) {
+      return `<pre class="log-inline">${escaped}</pre>`;
+    }
+    const preview = escapeHtml(text.slice(0, LOG_PREVIEW_LIMIT));
+    return `
+      <details class="log-block">
+        <summary class="log-summary">
+          <span class="log-summary-label">Show full output (${text.length} chars)</span>
+          <span class="log-summary-preview">${preview}…</span>
+        </summary>
+        <pre>${escaped}</pre>
+      </details>
+    `;
+  }
+  function renderActions(actions) {
+    if (!actions || !actions.length) return "<p>No actions logged.</p>";
+    return `
+      <h4>Actions (${actions.length})</h4>
+      <table class="table">
+        <thead><tr><th>Action</th><th>Status</th><th>CLI</th><th>stdout</th><th>stderr</th></tr></thead>
+        <tbody>
+          ${actions.map((action) => `
+            <tr>
+              <td>${escapeHtml(action.action)}</td>
+              <td class="status-${escapeHtml(action.status)}">${escapeHtml(action.status)}</td>
+              <td>${renderLog(action.metadata?.result?.invoked_command || action.metadata?.args?.command || "-")}</td>
+              <td>${renderLog(action.metadata?.result?.stdout)}</td>
+              <td>${renderLog(action.metadata?.result?.stderr)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function renderReport(report) {
+    const metrics = report.metrics || {};
+    const actions = report.actions || [];
+    const baseComponents = report.verification?.score_details?.components || report.verification?.components || {};
+    const taskLabel = report.task_name || report.task_id || "task";
+    const difficultyChip = renderDifficultyChip(report.difficulty);
+    return `
+      <div class="panel">
+        <div class="task-header">
+          <h2>${escapeHtml(taskLabel)}</h2>
+          ${difficultyChip}
+        </div>
+        <p>${escapeHtml(report.description || "no description")}</p>
+        <div class="metrics">
+          <strong>Score:</strong> ${formatNumber(metrics.score)}<br>
+          <strong>Duration:</strong> ${prettyDuration(metrics.duration_seconds)}s<br>
+          <strong>Step count:</strong> ${metrics.step_count || 0}<br>
+        </div>
+        ${renderScoreComponents(baseComponents)}
+      </div>
+      <div class="panel">${renderNotes(report.notes || [])}${renderLinks(report.links || [])}</div>
+      <div class="panel">${renderActions(actions)}</div>
+    `;
+  }
+
+  document.getElementById("app").innerHTML = renderReport(report);
+  </script>
+</body>
+</html>
