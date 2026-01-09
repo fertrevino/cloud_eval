@@ -14,6 +14,7 @@ from .agent_config import AgentDefinition, load_agent_definitions, select_agent
 from .logging_config import configure_logging
 from .runner import EvaluationRunner
 from .scenario import load_scenario
+from .summary import aggregate_reports, write_summary
 from .verifiers_run import VERIFIERS
 
 console = Console()
@@ -70,6 +71,13 @@ def run_suite(
         )
         report = runner.run(session_label=session_label)
         console.print(f"[green]Evaluation complete:[/green] {report}")
+
+    try:
+        summary = aggregate_reports(report_dir)
+        summary_path = write_summary(report_dir, summary)
+        console.print(f"[cyan]Summary written to[/cyan] {summary_path}")
+    except Exception as exc:
+        console.print(f"[yellow]Failed to write summary: {exc}[/yellow]")
 
 
 def _load_agent() -> Optional[AgentDefinition]:
