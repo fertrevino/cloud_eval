@@ -37,6 +37,9 @@ function findReportFiles(rootDir) {
   function walk(current) {
     const entries = fs.readdirSync(current, { withFileTypes: true });
     for (const entry of entries) {
+      if (entry.name === "summary.json") {
+        continue;
+      }
       const full = path.join(current, entry.name);
       if (entry.isDirectory()) {
         walk(full);
@@ -205,12 +208,14 @@ function buildHtml(report, inlineCss) {
     const baseComponents = report.verification?.score_details?.components || report.verification?.components || {};
     const taskLabel = report.task_name || report.task_id || "task";
     const difficultyChip = renderDifficultyChip(report.difficulty);
+    const modelLabel = report.model ? \`<p class="muted">Model: \${escapeHtml(report.model)}</p>\` : "";
     return \`
       <div class="panel">
         <div class="task-header">
           <h2>\${escapeHtml(taskLabel)}</h2>
           \${difficultyChip}
         </div>
+        \${modelLabel}
         <p>\${escapeHtml(report.description || "no description")}</p>
         <div class="metrics">
           <strong>Score:</strong> \${formatNumber(metrics.score)}<br>

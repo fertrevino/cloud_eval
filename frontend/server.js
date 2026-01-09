@@ -34,6 +34,9 @@ async function listReports() {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const files = [];
     for (const entry of entries) {
+      if (entry.name === "summary.json") {
+        continue;
+      }
       const resolved = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         const nested = await walk(resolved, prefix ? `${prefix}/${entry.name}` : entry.name);
@@ -48,6 +51,9 @@ async function listReports() {
         const raw = await fs.readFile(resolved, "utf-8");
         const parsed = JSON.parse(raw);
         taskLabel = parsed.task_name || parsed.task_id || parsed.scenario || null;
+        if (parsed.model) {
+          model = parsed.model;
+        }
       } catch (err) {
         if (err.code !== "ENOENT") {
           console.debug("Unable to read report metadata", resolved, err.message);
@@ -59,6 +65,7 @@ async function listReports() {
           name: prefix ? `${prefix}/${entry.name}` : entry.name,
           modified_at: stats.mtimeMs,
           task_label: taskLabel,
+          model,
         });
       } catch (err) {
         if (err.code === "ENOENT") {
@@ -113,6 +120,20 @@ app.get("/api/reports/*", async (req, res) => {
     }
     console.error(err);
     res.status(500).json({ error: "unable to load report" });
+  }
+});
+
+app.get("/api/summary", async (_req, res) => {
+  const summaryPath = path.join(reportsDir, "summary.json");
+  try {
+    const data = await fs.readFile(summaryPath, "utf-8");
+    res.json(JSON.parse(data));
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      return res.status(404).json({ error: "summary not found" });
+    }
+    console.error(err);
+    res.status(500).json({ error: "unable to load summary" });
   }
 });
 

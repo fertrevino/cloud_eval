@@ -46,6 +46,8 @@ class EvaluationReport:
     category_name: Optional[str]
     description: str
     difficulty: str
+    agent_name: Optional[str]
+    model: Optional[str]
     notes: List[str]
     links: List[str]
     actions: List[ActionLog]
@@ -64,6 +66,8 @@ class EvaluationReport:
             "category_name": self.category_name,
             "description": self.description,
             "difficulty": self.difficulty.value if hasattr(self.difficulty, "value") else self.difficulty,
+            "agent_name": self.agent_name,
+            "model": self.model,
             "notes": self.notes,
             "links": self.links,
             "actions": [action.to_dict() for action in self.actions],

@@ -17,16 +17,20 @@
           <div class="filter">
             <label for="run-filter">Run id</label>
             <select id="run-filter" aria-label="Run id"></select>
+            <label for="model-filter">Model</label>
+            <select id="model-filter" aria-label="Model filter"></select>
             <button id="evaluate-btn" class="btn-primary">▶ Run Evaluation</button>
             <span id="evaluate-status" style="margin-left: 10px; font-size: 0.9em;"></span>
           </div>
         </section>
         <section class="panel" aria-label="Reports">
+          <button id="summary-tab" class="summary-tab-btn">Summary</button>
           <ul id="report-list" class="report-list"></ul>
         </section>
       </aside>
       <section class="panel" aria-live="polite">
-        <h2>Details</h2>
+        <h2 id="detail-heading">Details</h2>
+        <div id="summary-panel" hidden></div>
         <div id="report-detail" class="report-detail">
           <p>Select a report to inspect metrics, prompts, and actions.</p>
         </div>

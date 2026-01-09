@@ -1,12 +1,19 @@
 const reportListEl = document.getElementById("report-list");
 const detailEl = document.getElementById("report-detail");
 const runFilterEl = document.getElementById("run-filter");
+const modelFilterEl = document.getElementById("model-filter");
 const evaluateBtnEl = document.getElementById("evaluate-btn");
 const evaluateStatusEl = document.getElementById("evaluate-status");
+const summaryTabBtn = document.getElementById("summary-tab");
+const summaryEl = document.getElementById("summary-panel");
 let reports = [];
 let selected = null;
 let selectedRun = null;
+let selectedModel = null;
 let runFolders = [];
+let summary = null;
+let showingSummary = false;
+let availableModels = [];
 const LOG_PREVIEW_LIMIT = 600;
 
 const escapeHtml = (value) => (value ? value.toString().replace(/</g, "&lt;") : "");
@@ -104,6 +111,7 @@ function parseReportMeta(report) {
 
 function computeRunFolders(list) {
   const map = new Map();
+  const models = new Set();
   list.forEach((report) => {
     const meta = parseReportMeta(report);
     const key = meta.run || "";
@@ -112,8 +120,15 @@ function computeRunFolders(list) {
     existing.count += 1;
     existing.latest = Math.max(existing.latest, modified);
     map.set(key, existing);
+
+    if (report.model) {
+      models.add(report.model);
+    }
   });
-  return Array.from(map.values()).sort((a, b) => b.latest - a.latest);
+  return {
+    runs: Array.from(map.values()).sort((a, b) => b.latest - a.latest),
+    models: Array.from(models).sort(),
+  };
 }
 
 function renderActions(actions) {
@@ -151,6 +166,11 @@ function renderActions(actions) {
 function renderReport(report) {
   if (!report) {
     detailEl.innerHTML = "<p>Select a report to inspect metrics, actions, and payloads.</p>";
+    if (!showingSummary) {
+      detailEl.style.display = "block";
+      const heading = document.getElementById("detail-heading");
+      if (heading) heading.textContent = "Details";
+    }
     return;
   }
 
@@ -162,12 +182,14 @@ function renderReport(report) {
 
   const taskLabel = report.task_name || report.task_id || report.scenario || "task";
   const difficultyChip = renderDifficultyChip(report.difficulty);
+  const modelLabel = report.model ? `<p class="muted">Model: ${escapeHtml(report.model)}</p>` : "";
   detailEl.innerHTML = `
     <section>
       <div class="task-header">
         <h3>Task: ${taskLabel}</h3>
         ${difficultyChip}
       </div>
+      ${modelLabel}
       <p>${report.description || "no description"}</p>
       <div class="metrics">
         <strong>Score:</strong> ${formatNumber(metrics.score)}<br>
@@ -184,6 +206,57 @@ function renderReport(report) {
     </section>
     ${renderReasoning(actions)}
   `;
+  detailEl.style.display = showingSummary ? "none" : "block";
+}
+
+function renderSummary(showMissing = false) {
+  if (!summaryEl) return;
+  if (showMissing || !summary) {
+    summaryEl.innerHTML = "<p class=\"muted\">Summary unavailable.</p>";
+    summaryEl.hidden = false;
+    return;
+  }
+  const modelEntries = summary.by_model
+    ? Object.entries(summary.by_model).map(([k, v]) => ({
+        model: k,
+        count: v.count || 0,
+        passed: v.passed || 0,
+        failed: v.failed || 0,
+        avg: v.avg_score || 0,
+        pass_rate: v.pass_rate || 0,
+        difficulty: summary.by_model_difficulty && summary.by_model_difficulty[k],
+      }))
+    : [];
+  const modelBlock = modelEntries.length
+    ? `
+      <div class="summary-block">
+        <h4>Leaderboard</h4>
+        <table class="summary-table">
+          <thead>
+            <tr><th>Model</th><th>Runs</th><th>Passed</th><th>Failed</th><th>Avg score</th><th>Pass rate</th><th>Difficulty mix</th></tr>
+          </thead>
+          <tbody>
+            ${modelEntries
+              .map(
+                (row) => `
+                <tr>
+                  <td>${escapeHtml(row.model)}</td>
+                  <td>${row.count}</td>
+                  <td class="success">${row.passed}</td>
+                  <td class="error">${row.failed}</td>
+                  <td>${formatNumber(row.avg, 2)}</td>
+                  <td>${formatNumber(row.pass_rate * 100, 1)}%</td>
+                  <td>${renderDifficultyMix(row.difficulty)}</td>
+                </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+    `
+    : "";
+
+  summaryEl.innerHTML = modelBlock;
 }
 
 function renderReasoning(actions) {
@@ -222,13 +295,32 @@ function renderReasoning(actions) {
 
 async function loadReports() {
   try {
-    const response = await fetch("/api/reports");
-    const data = await response.json();
-    reports = data.reports || [];
-    runFolders = computeRunFolders(reports);
-    ensureRunSelection();
-    renderRunFilter();
-    renderReportList();
+    const [reportsResp, summaryResp] = await Promise.allSettled([
+      fetch("/api/reports"),
+      fetch("/api/summary"),
+    ]);
+
+    if (reportsResp.status === "fulfilled") {
+      const data = await reportsResp.value.json();
+      reports = data.reports || [];
+      const computed = computeRunFolders(reports);
+      runFolders = computed.runs;
+      availableModels = computed.models || [];
+      ensureRunSelection();
+      renderRunFilter();
+      renderModelFilter();
+      renderReportList();
+    } else {
+      detailEl.innerHTML = `<p class="error">Unable to load reports: ${reportsResp.reason?.message || reportsResp.reason}</p>`;
+    }
+
+    if (summaryResp.status === "fulfilled" && summaryResp.value.ok) {
+      summary = await summaryResp.value.json();
+      renderSummary();
+    } else {
+      summary = null;
+      renderSummary(true);
+    }
   } catch (err) {
     detailEl.innerHTML = `<p class="error">Unable to load reports: ${err.message}</p>`;
   }
@@ -253,6 +345,22 @@ function renderRunFilter() {
   }
 }
 
+function renderModelFilter() {
+  if (!modelFilterEl) return;
+  modelFilterEl.innerHTML = "";
+  const defaultOpt = document.createElement("option");
+  defaultOpt.value = "";
+  defaultOpt.textContent = "All models";
+  modelFilterEl.appendChild(defaultOpt);
+  availableModels.forEach((model) => {
+    const opt = document.createElement("option");
+    opt.value = model;
+    opt.textContent = model;
+    modelFilterEl.appendChild(opt);
+  });
+  modelFilterEl.value = selectedModel || "";
+}
+
 function ensureRunSelection() {
   if (!selectedRun || !runFolders.some((folder) => folder.name === selectedRun)) {
     selectedRun = runFolders.length ? runFolders[0].name : null;
@@ -263,7 +371,11 @@ function getVisibleReports() {
   if (!selectedRun) {
     return [];
   }
-  return reports.filter((report) => report.name && report.name.startsWith(`${selectedRun}/`));
+  return reports.filter((report) => {
+    if (!report.name || !report.name.startsWith(`${selectedRun}/`)) return false;
+    if (selectedModel && report.model !== selectedModel) return false;
+    return true;
+  });
 }
 
 function renderReportList() {
@@ -279,9 +391,10 @@ function renderReportList() {
   }
   visibleReports.forEach((report) => {
     const meta = parseReportMeta(report);
+    const label = report.task_label || meta.title;
     const btn = document.createElement("button");
-    btn.textContent = meta.title;
-    btn.title = meta.name;
+    btn.textContent = label;
+    btn.title = report.model ? `${meta.name} [${report.model}]` : meta.name;
     btn.dataset.reportName = meta.name;
     btn.addEventListener("click", () => selectReport(report.name, btn));
     if (selected === report.name) {
@@ -303,11 +416,25 @@ if (runFilterEl) {
   runFilterEl.addEventListener("change", () => {
     selectedRun = runFilterEl.value || null;
     selected = null;
+    showingSummary = false;
+    toggleSummaryPanel(false);
+    renderReportList();
+  });
+}
+
+if (modelFilterEl) {
+  modelFilterEl.addEventListener("change", () => {
+    selectedModel = modelFilterEl.value || null;
+    selected = null;
+    showingSummary = false;
+    toggleSummaryPanel(false);
     renderReportList();
   });
 }
 
 async function selectReport(name, button) {
+  showingSummary = false;
+  toggleSummaryPanel(false);
   selected = name;
   document.querySelectorAll("#report-list button").forEach((btn) => {
     btn.classList.toggle("selected", btn === button);
@@ -327,6 +454,54 @@ async function selectReport(name, button) {
 
 loadReports();
 setInterval(loadReports, 15000);
+
+if (summaryTabBtn) {
+  summaryTabBtn.addEventListener("click", () => {
+    showingSummary = true;
+    selected = null;
+    document.querySelectorAll("#report-list button").forEach((btn) => btn.classList.remove("selected"));
+    toggleSummaryPanel(true);
+  });
+}
+
+function toggleSummaryPanel(forceShow) {
+  if (forceShow === true) {
+    showingSummary = true;
+  } else if (forceShow === false) {
+    showingSummary = false;
+  }
+  if (!summaryEl) return;
+  summaryEl.hidden = !showingSummary;
+  const heading = document.getElementById("detail-heading");
+  if (showingSummary) {
+    detailEl.style.display = "none";
+    if (heading) {
+      heading.textContent = "";
+      heading.style.display = "none";
+    }
+  } else {
+    detailEl.style.display = "block";
+    if (heading) {
+      heading.textContent = "Details";
+      heading.style.display = "";
+    }
+  }
+  if (summaryTabBtn) {
+    summaryTabBtn.classList.toggle("active", showingSummary);
+  }
+}
+
+function renderDifficultyMix(diffMap) {
+  if (!diffMap || typeof diffMap !== "object") return "";
+  const entries = Object.entries(diffMap)
+    .map(([diff, vals]) => {
+      const pct = vals.pass_rate != null ? formatNumber((vals.pass_rate || 0) * 100, 1) : "";
+      const avg = vals.avg_score != null ? formatNumber(vals.avg_score, 2) : "";
+      return `${escapeHtml(diff)}: ${vals.count || 0} runs, pass ${pct}%, avg ${avg}`;
+    })
+    .join("<br>");
+  return entries || "";
+}
 
 // Evaluate button handler
 if (evaluateBtnEl) {

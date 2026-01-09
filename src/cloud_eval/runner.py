@@ -198,6 +198,8 @@ class EvaluationRunner:
             category_name=self.scenario.category_name,
             description=self.scenario.description,
             difficulty=self.scenario.metadata.difficulty.value,
+            agent_name=self.agent.name if self.agent else None,
+            model=self.agent.model if self.agent else None,
             notes=self.scenario.metadata.notes,
             links=self.scenario.metadata.links,
             actions=actions,
