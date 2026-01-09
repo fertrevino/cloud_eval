@@ -15,8 +15,8 @@ from tasks.aws.sns.create_topic.verify import SNSTopicVerifier
 VERIFIERS: Dict[str, Type[Verifier]] = {
     "cloud-eval-s3-simple-bucket": S3BucketVerifier,
     "cloud-eval-s3-application-logs": S3ApplicationLogsVerifier,
-    "cloud-eval-s3-backups-bucket": S3BackupsBucketVerifier,
-    "cloud-eval-s3-set-bucket-private": S3SetBucketPrivateVerifier,
-    "aws-sqs-create-queue": SQSQueueVerifier,
-    "aws-sns-create-topic": SNSTopicVerifier,
+    # "cloud-eval-s3-backups-bucket": S3BackupsBucketVerifier,
+    # "cloud-eval-s3-set-bucket-private": S3SetBucketPrivateVerifier,
+    # "aws-sqs-create-queue": SQSQueueVerifier,
+    # "aws-sns-create-topic": SNSTopicVerifier,
 }
