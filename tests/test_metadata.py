@@ -29,6 +29,20 @@ def load_task_names(tasks_dir: Path) -> list[tuple[Path, str]]:
     return results
 
 
+def test_task_names_not_kebab_or_snake() -> None:
+    tasks_dir = Path(os.getenv("CLOUD_EVAL_TASKS_DIR", "tasks")).resolve()
+    assert tasks_dir.exists(), f"Tasks dir not found: {tasks_dir}"
+
+    bad = []
+    for meta_path, task_name in load_task_names(tasks_dir):
+        if is_kebab_or_snake_case(task_name):
+            bad.append((meta_path, task_name))
+
+    if bad:
+        details = "\n".join(f"- {meta_path}: {task_name}" for meta_path, task_name in bad)
+        raise AssertionError(f"Task names must not be kebab-case or snake_case:\n{details}")
+
+
 def main() -> int:
     tasks_dir = Path(os.getenv("CLOUD_EVAL_TASKS_DIR", "tasks")).resolve()
     if not tasks_dir.exists():
