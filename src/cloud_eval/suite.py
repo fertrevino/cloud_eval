@@ -58,6 +58,8 @@ def run_suite(
 
     report_dir.mkdir(parents=True, exist_ok=True)
     session_label = datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
+    run_dir = report_dir / session_label
+    run_dir.mkdir(parents=True, exist_ok=True)
 
     for scenario_path in scenarios:
         console.print(f"[blue]Running task[/blue] {scenario_path}")
@@ -73,8 +75,8 @@ def run_suite(
         console.print(f"[green]Evaluation complete:[/green] {report}")
 
     try:
-        summary = aggregate_reports(report_dir)
-        summary_path = write_summary(report_dir, summary)
+        summary = aggregate_reports(run_dir)
+        summary_path = write_summary(run_dir, summary)
         console.print(f"[cyan]Summary written to[/cyan] {summary_path}")
     except Exception as exc:
         console.print(f"[yellow]Failed to write summary: {exc}[/yellow]")

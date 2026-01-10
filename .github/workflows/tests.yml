@@ -45,3 +45,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: test
         run: |
           PYTHONPATH=src pytest test_service.py -v
+
+      - name: Run metadata checks
+        run: |
+          python test_metadata.py

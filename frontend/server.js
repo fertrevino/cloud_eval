@@ -123,8 +123,20 @@ app.get("/api/reports/*", async (req, res) => {
   }
 });
 
-app.get("/api/summary", async (_req, res) => {
-  const summaryPath = path.join(reportsDir, "summary.json");
+app.get("/api/summary", async (req, res) => {
+  const runParam = req.query.run;
+  const runName = Array.isArray(runParam) ? runParam[0] : runParam;
+  let summaryPath = path.join(reportsDir, "summary.json");
+
+  if (runName) {
+    const resolvedRun = path.resolve(reportsDir, runName);
+    const relative = path.relative(reportsDir, resolvedRun);
+    if (relative.startsWith("..") || path.isAbsolute(relative)) {
+      return res.status(400).json({ error: "invalid run name" });
+    }
+    summaryPath = path.join(resolvedRun, "summary.json");
+  }
+
   try {
     const data = await fs.readFile(summaryPath, "utf-8");
     res.json(JSON.parse(data));
