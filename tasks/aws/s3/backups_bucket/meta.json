@@ -1,6 +1,6 @@
 {
   "task_id": "cloud-eval-s3-backups-bucket",
-  "task_name": "s3-backups-bucket",
+  "task_name": "S3 Backups Bucket",
   "category_id": "aws-s3",
   "category_name": "AWS S3 Tasks",
   "description": "Create an S3 bucket suitable for backups with safeguards against deletion and cost optimization over time.",

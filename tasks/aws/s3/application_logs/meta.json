@@ -1,6 +1,6 @@
 {
   "task_id": "cloud-eval-s3-application-logs",
-  "task_name": "s3-application-logs",
+  "task_name": "S3 Application Logs",
   "category_id": "aws-s3",
   "category_name": "AWS S3 Tasks",
   "description": "Create an S3 bucket for application logs in us-east-1 with a 6-month retention policy.",

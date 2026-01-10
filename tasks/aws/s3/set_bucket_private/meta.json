@@ -1,6 +1,6 @@
 {
   "task_id": "cloud-eval-s3-set-bucket-private",
-  "task_name": "s3-set-bucket-private",
+  "task_name": "Set S3 Bucket Private",
   "category_id": "aws-s3",
   "category_name": "AWS S3 Tasks",
   "description": "Audit an existing S3 bucket and make it private (remove public access).",

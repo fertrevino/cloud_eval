@@ -1,6 +1,6 @@
 {
   "task_id": "cloud-eval-s3-simple-bucket",
-  "task_name": "s3-simple-bucket",
+  "task_name": "S3 Simple Bucket",
   "category_id": "aws-s3",
   "category_name": "AWS S3 Tasks",
   "description": "Demonstrate creating and configuring an S3 bucket securely by default.",
