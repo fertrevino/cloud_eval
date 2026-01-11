@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 """Test script for cloud-eval service."""
-import sys
 import os
-from pathlib import Path
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC_ROOT = REPO_ROOT / "src"
-sys.path.insert(0, str(REPO_ROOT))
-sys.path.insert(0, str(SRC_ROOT))
+import sys
 
 from cloud_eval.service import create_app
 
