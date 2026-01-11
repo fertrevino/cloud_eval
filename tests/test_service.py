@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Test script for cloud-eval service."""
-import sys
 import os
+import sys
+
 from cloud_eval.service import create_app
 
 # Set dummy endpoint for testing

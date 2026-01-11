@@ -233,7 +233,7 @@ function renderSummary(showMissing = false) {
         <h4>Leaderboard</h4>
         <table class="summary-table">
           <thead>
-            <tr><th>Model</th><th>Runs</th><th>Passed</th><th>Failed</th><th>Avg score</th><th>Pass rate</th><th>Difficulty mix</th></tr>
+            <tr><th>Model</th><th>Tasks</th><th>Passed</th><th>Failed</th><th>Avg score</th><th>Pass rate</th><th>Difficulty mix</th></tr>
           </thead>
           <tbody>
             ${modelEntries
@@ -295,34 +295,49 @@ function renderReasoning(actions) {
 
 async function loadReports() {
   try {
-    const [reportsResp, summaryResp] = await Promise.allSettled([
-      fetch("/api/reports"),
-      fetch("/api/summary"),
-    ]);
-
-    if (reportsResp.status === "fulfilled") {
-      const data = await reportsResp.value.json();
-      reports = data.reports || [];
-      const computed = computeRunFolders(reports);
-      runFolders = computed.runs;
-      availableModels = computed.models || [];
-      ensureRunSelection();
-      renderRunFilter();
-      renderModelFilter();
-      renderReportList();
-    } else {
-      detailEl.innerHTML = `<p class="error">Unable to load reports: ${reportsResp.reason?.message || reportsResp.reason}</p>`;
+    const reportsResp = await fetch("/api/reports");
+    if (!reportsResp.ok) {
+      detailEl.innerHTML = `<p class="error">Unable to load reports: ${reportsResp.statusText}</p>`;
+      summary = null;
+      renderSummary(true);
+      return;
     }
+    const data = await reportsResp.json();
+    reports = data.reports || [];
+    const computed = computeRunFolders(reports);
+    runFolders = computed.runs;
+    availableModels = computed.models || [];
+    ensureRunSelection();
+    renderRunFilter();
+    renderModelFilter();
+    renderReportList();
+    await loadSummary(selectedRun);
+  } catch (err) {
+    detailEl.innerHTML = `<p class="error">Unable to load reports: ${err.message}</p>`;
+    summary = null;
+    renderSummary(true);
+  }
+}
 
-    if (summaryResp.status === "fulfilled" && summaryResp.value.ok) {
-      summary = await summaryResp.value.json();
+async function loadSummary(runName) {
+  if (!runName) {
+    summary = null;
+    renderSummary(true);
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ run: runName });
+    const res = await fetch(`/api/summary?${params.toString()}`);
+    if (res.ok) {
+      summary = await res.json();
       renderSummary();
     } else {
       summary = null;
       renderSummary(true);
     }
   } catch (err) {
-    detailEl.innerHTML = `<p class="error">Unable to load reports: ${err.message}</p>`;
+    summary = null;
+    renderSummary(true);
   }
 }
 
@@ -419,6 +434,7 @@ if (runFilterEl) {
     showingSummary = false;
     toggleSummaryPanel(false);
     renderReportList();
+    loadSummary(selectedRun);
   });
 }
 
