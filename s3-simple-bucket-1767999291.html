@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cloud Eval Report - Create SNS topic</title>
+  <title>Cloud Eval Report - s3-simple-bucket</title>
   <style>
   :root {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -81,6 +81,24 @@ main > .panel {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+.summary-tab-btn {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #f1f5f9;
+  padding: 0.85rem;
+  font: inherit;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+.summary-tab-btn.active {
+  background: #0f172a;
+  color: #fff;
+  border-color: #0f172a;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
 }
 .filter {
   display: flex;
@@ -177,6 +195,54 @@ main > .panel {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.75rem;
+}
+.summary-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+}
+.summary-label {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+.summary-value {
+  margin: 0.1rem 0 0;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+.summary-value.success {
+  color: #15803d;
+}
+.summary-value.error {
+  color: #b91c1c;
+}
+.summary-block ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.25rem 0 0;
+}
+.summary-block li {
+  font-size: 0.95rem;
+  color: #334155;
+}
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+.summary-table th,
+.summary-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
 }
 .chip {
   display: inline-flex;
@@ -337,7 +403,7 @@ main > .panel {
     <h1>Cloud Eval Report</h1>
     <div id="app" class="panel">Loading report…</div>
   </main>
-  <script type="application/json" id="report-data">{"task_id":"aws-sns-create-topic","task_name":"Create SNS topic","category_id":"sns","category_name":"Amazon SNS","description":"Create an SNS topic with proper attributes and tags applied.","difficulty":"easy","notes":["SNS topics are the foundation for publish-subscribe messaging in AWS. Applying tags to topics enables better cost allocation and resource management."],"links":["https://docs.aws.amazon.com/sns/latest/dg/CreateTopic.html"],"actions":[{"timestamp":1767552248.2594953,"action":"aws_cli","resource":"aws --endpoint-url http://localstack:4566 sns create-topic --name cloud-eval-topic --region us-east-1","status":"ok","metadata":{"args":{"command":"aws sns create-topic --name cloud-eval-topic --region us-east-1"},"result":{"command":"aws sns create-topic --name cloud-eval-topic --region us-east-1","invoked_command":"aws --endpoint-url http://localstack:4566 sns create-topic --name cloud-eval-topic --region us-east-1","return_code":0,"stdout":"{\n    \"TopicArn\": \"arn:aws:sns:us-east-1:000000000000:cloud-eval-topic\"\n}","stderr":""},"llm_trace":{"prompt":[{"role":"system","content":"You control AWS resources via a single aws_cli tool. Only use tool calls to change resource state and never respond directly."},{"role":"user","content":"Task description:\nCreate an SNS topic named `cloud-eval-topic` in the us-east-1 region.\n"}],"assistant":{"role":"assistant","content":"","function_call":{"name":"aws_cli","arguments":"{\"command\":\"aws sns create-topic --name cloud-eval-topic --region us-east-1\"}"}}}}}],"metrics":{"duration_seconds":0.034,"step_count":1,"score":0.9,"cost_estimate_usd":0,"error_action_penalty":0},"verification":{"score":0.9,"components":{"exists":{"label":"Topic exists","description":"Topic was successfully created","value":0.9,"max":0.9},"tags":{"label":"Tags applied","description":"Best-practice tags present on topic","value":0,"max":0.1}},"passed":true,"errors":[],"score_details":{"timing":{"started_at":1767552249.1302953,"ended_at":1767552249.1641104,"duration_seconds":0.034},"components":{"exists":{"label":"Topic exists","value":0.9,"max":0.9,"description":""},"tags":{"label":"Tags applied","value":0,"max":0.1,"description":""}}}},"started_at":1767552249.1302953,"generated_at":1767552249.1643226,"endpoint_url":"http://localstack:4566"}</script>
+  <script type="application/json" id="report-data">{"task_id":"cloud-eval-s3-simple-bucket","task_name":"s3-simple-bucket","category_id":"aws-s3","category_name":"AWS S3 Tasks","description":"Demonstrate creating and configuring an S3 bucket securely by default.","difficulty":"easy","agent_name":"openai-llm","model":"gpt-4o-mini","notes":["Bucket names must be globally unique accross all AWS accounts, hence having a Global Unique Identifier (GUID) as part of the bucket name is recommended. Without further context in the prompt, it is expected that creating a bucket follows security practices such as blocking public access."],"links":["https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html#automatically-created-buckets"],"actions":[{"timestamp":1767999288.8675587,"action":"aws_cli","resource":"aws --endpoint-url http://localstack:4566 s3api create-bucket --bucket my-new-bucket --region us-east-1 --create-bucket-configuration LocationConstraint=us-east-1","status":"error","metadata":{"args":{"command":"aws s3api create-bucket --bucket my-new-bucket --region us-east-1 --create-bucket-configuration LocationConstraint=us-east-1"},"result":{"command":"aws s3api create-bucket --bucket my-new-bucket --region us-east-1 --create-bucket-configuration LocationConstraint=us-east-1","invoked_command":"aws --endpoint-url http://localstack:4566 s3api create-bucket --bucket my-new-bucket --region us-east-1 --create-bucket-configuration LocationConstraint=us-east-1","return_code":255,"stdout":"","stderr":"An error occurred (InvalidLocationConstraint) when calling the CreateBucket operation: The specified location-constraint is not valid"},"llm_trace":{"prompt":[{"role":"system","content":"You control AWS resources via a single aws_cli tool. Only use tool calls to change resource state and never respond directly."},{"role":"user","content":"Task description:\nCreate an S3 bucket in the us-east-1 region.\n"}],"assistant":{"role":"assistant","content":"","function_call":{"name":"aws_cli","arguments":"{\"command\":\"aws s3api create-bucket --bucket my-new-bucket --region us-east-1 --create-bucket-configuration LocationConstraint=us-east-1\"}"}}}}},{"timestamp":1767999290.2816646,"action":"aws_cli","resource":"aws --endpoint-url http://localstack:4566 s3api create-bucket --bucket my-new-bucket --region us-east-1","status":"ok","metadata":{"args":{"command":"aws s3api create-bucket --bucket my-new-bucket --region us-east-1"},"result":{"command":"aws s3api create-bucket --bucket my-new-bucket --region us-east-1","invoked_command":"aws --endpoint-url http://localstack:4566 s3api create-bucket --bucket my-new-bucket --region us-east-1","return_code":0,"stdout":"{\n    \"Location\": \"/my-new-bucket\"\n}","stderr":""},"llm_trace":{"prompt":[{"role":"system","content":"You control AWS resources via a single aws_cli tool. Only use tool calls to change resource state and never respond directly."},{"role":"user","content":"Task description:\nCreate an S3 bucket in the us-east-1 region.\n"},{"role":"assistant","content":"","function_call":{"name":"aws_cli","arguments":"{\"command\":\"aws s3api create-bucket --bucket my-new-bucket --region us-east-1 --create-bucket-configuration LocationConstraint=us-east-1\"}"}},{"role":"function","name":"aws_cli","content":"{\"command\": \"aws s3api create-bucket --bucket my-new-bucket --region us-east-1 --create-bucket-configuration LocationConstraint=us-east-1\", \"invoked_command\": \"aws --endpoint-url http://localstack:4566 s3api create-bucket --bucket my-new-bucket --region us-east-1 --create-bucket-configuration LocationConstraint=us-east-1\", \"return_code\": 255, \"stdout\": \"\", \"stderr\": \"An error occurred (InvalidLocationConstraint) when calling the CreateBucket operation: The specified location-constraint is not valid\"}"}],"assistant":{"role":"assistant","content":"","function_call":{"name":"aws_cli","arguments":"{\"command\":\"aws s3api create-bucket --bucket my-new-bucket --region us-east-1\"}"}}}}}],"metrics":{"duration_seconds":0.188,"step_count":2,"score":0.83,"cost_estimate_usd":0,"error_action_penalty":0.02},"verification":{"score":0.85,"components":{"base":{"label":"Resource correctness","description":"Bucket exists in correct region (us-east-1)","value":0.65,"max":0.65},"unique_name_or_runid":{"label":"Unique name","description":"Bucket has unique suffix (UUID/ULID/random)","value":0,"max":0.1},"block_public_access":{"label":"Public access block","description":"PublicAccessBlock enabled","value":0.1,"max":0.1},"default_encryption":{"label":"Default encryption","description":"Server-side encryption configured","value":0.1,"max":0.1},"best_practice_tags":{"label":"Tags applied","description":"Best-practice tags present","value":0,"max":0.05}},"passed":true,"errors":[],"score_details":{"timing":{"started_at":1767999291.6326785,"ended_at":1767999291.8201833,"duration_seconds":0.188},"components":{"base":{"label":"Resource correctness","value":0.65,"max":0.65,"description":"Bucket exists in correct region (us-east-1)"},"unique_name_or_runid":{"label":"Unique name","value":0,"max":0.1,"description":"Bucket has unique suffix (UUID/ULID/random)"},"block_public_access":{"label":"Public access block","value":0.1,"max":0.1,"description":"PublicAccessBlock enabled"},"default_encryption":{"label":"Default encryption","value":0.1,"max":0.1,"description":"Server-side encryption configured"},"best_practice_tags":{"label":"Tags applied","value":0,"max":0.05,"description":"Best-practice tags present"},"error_action_penalty":{"label":"Penalty (-0.02 per error action)","value":-0.02,"max":null,"description":""}}}},"started_at":1767999291.6326785,"generated_at":1767999291.820357,"endpoint_url":"http://localstack:4566"}</script>
   <script>
   const LOG_PREVIEW_LIMIT = 40;
   const report = JSON.parse(document.getElementById("report-data").textContent || "{}");
@@ -450,12 +516,14 @@ main > .panel {
     const baseComponents = report.verification?.score_details?.components || report.verification?.components || {};
     const taskLabel = report.task_name || report.task_id || "task";
     const difficultyChip = renderDifficultyChip(report.difficulty);
+    const modelLabel = report.model ? `<p class="muted">Model: ${escapeHtml(report.model)}</p>` : "";
     return `
       <div class="panel">
         <div class="task-header">
           <h2>${escapeHtml(taskLabel)}</h2>
           ${difficultyChip}
         </div>
+        ${modelLabel}
         <p>${escapeHtml(report.description || "no description")}</p>
         <div class="metrics">
           <strong>Score:</strong> ${formatNumber(metrics.score)}<br>
